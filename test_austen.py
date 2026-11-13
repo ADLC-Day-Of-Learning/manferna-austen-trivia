@@ -113,6 +113,17 @@ class TestAustenFunctions(unittest.TestCase):
         args = austen.parse_args([])
         self.assertFalse(args.question)
 
+    def test_parse_args_with_survival_flag(self):
+        args = austen.parse_args(["--survival"])
+        self.assertTrue(args.survival)
+
+        args_short = austen.parse_args(["-s"])
+        self.assertTrue(args_short.survival)
+
+    def test_parse_args_without_survival_flag(self):
+        args = austen.parse_args([])
+        self.assertFalse(args.survival)
+
     def test_main_without_args_prints_help(self):
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             exit_code = austen.main([])
@@ -120,6 +131,36 @@ class TestAustenFunctions(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn("Jane Austen Trivia CLI", output)
         self.assertIn("--question", output)
+        self.assertIn("--survival", output)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_survival_mode_terminates_on_incorrect(self, mock_play, mock_load):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.return_value = False
+        exit_code = austen.main(["--survival"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 1)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_survival_mode_continues_until_incorrect(self, mock_play, mock_load):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.side_effect = [True, True, False]
+        exit_code = austen.main(["--survival"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 3)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_non_survival_mode_does_not_terminate_on_incorrect(
+        self, mock_play, mock_load
+    ):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.side_effect = [False, None]
+        exit_code = austen.main(["--question"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 2)
 
     @patch("austen.load_questions", side_effect=FileNotFoundError("missing file"))
     def test_main_error_loading_questions(self, mock_load):
@@ -320,6 +361,41 @@ class TestAustenCLI(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         self.assertIn("--question", result.stdout)
+        self.assertIn("--survival", result.stdout)
+
+    def test_cli_survival_mode_terminates_on_incorrect_answer(self):
+        """Verify that in survival mode, the game terminates upon an incorrect answer."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        result = subprocess.run(
+            [sys.executable, str(script_path), "--survival"],
+            input="incorrect_answer\n",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Incorrect", result.stdout)
+        self.assertEqual(result.stdout.lower().count("your answer:"), 1)
+
+    def test_cli_survival_mode_short_flag(self):
+        """Verify -s flag enables survival mode and terminates on incorrect answer."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        result = subprocess.run(
+            [sys.executable, str(script_path), "-s"],
+            input="incorrect_answer\n",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Incorrect", result.stdout)
+        self.assertEqual(result.stdout.lower().count("your answer:"), 1)
 
     def test_cli_multi_question_session_with_scoring(self):
         """Verify CLI tracks scores across consecutive questions and exits cleanly on EOF."""
