@@ -53,5 +53,38 @@
     "question": "What 2001 romantic comedy film starring Renée Zellweger and Colin Firth was loosely based on Pride and Prejudice?",
     "answer": "Bridget Jones's Diary",
     "category": "Adaptations"
+    "question": "Who is the protagonist of Pride and Prejudice and the second eldest Bennet daughter?",
+    "answer": "Elizabeth Bennet",
+    "category": "Characters from Pride and Prejudice"
+  },
+  {
+    "question": "Who is the master of Pemberley who eventually marries Elizabeth Bennet?",
+    "answer": "Fitzwilliam Darcy",
+    "category": "Characters from Pride and Prejudice"
+  },
+  {
+    "question": "Who is the eldest Bennet sister, known for her kindness and beauty?",
+    "answer": "Jane Bennet",
+    "category": "Characters from Pride and Prejudice"
+  },
+  {
+    "question": "Who is the wealthy and amiable gentleman who leases Netherfield Park?",
+    "answer": "Charles Bingley",
+    "category": "Characters from Pride and Prejudice"
+  },
+  {
+    "question": "Who is the sycophantic clergyman set to inherit the Longbourn estate?",
+    "answer": "Mr. Collins",
+    "category": "Characters from Pride and Prejudice"
+  },
+  {
+    "question": "Who is the militia officer who elopes with Lydia Bennet?",
+    "answer": "George Wickham",
+    "category": "Characters from Pride and Prejudice"
+  },
+  {
+    "question": "Who is Mr. Darcy's arrogant aunt and patroness of Mr. Collins?",
+    "answer": "Lady Catherine de Bourgh",
+    "category": "Characters from Pride and Prejudice"
   }
 ]
