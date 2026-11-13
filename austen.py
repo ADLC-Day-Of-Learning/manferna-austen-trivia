@@ -57,9 +57,7 @@ class ScoreTracker:
         else:
             self.incorrect += 1
 
-        if self.total >= self.max_questions:
-            return True
-        return False
+        return self.total >= self.max_questions
 
 
 def play_question(
