@@ -18,7 +18,7 @@ class TestQuestionsData(unittest.TestCase):
         self.assertGreaterEqual(len(self.questions), 6)
 
     def test_questions_schema(self):
-        required_fields = ["question", "answer", "category"]
+        required_fields = ["question", "answer", "category", "subcategory"]
         for index, item in enumerate(self.questions):
             self.assertIsInstance(
                 item, dict, f"Item at index {index} should be a dictionary"
@@ -34,9 +34,36 @@ class TestQuestionsData(unittest.TestCase):
                     str,
                     f"Field '{field}' in item {index} must be a string",
                 )
-                self.assertTrue(
-                    len(item[field].strip()) > 0,
-                    f"Field '{field}' in item {index} cannot be empty",
+                if field != "subcategory":
+                    self.assertTrue(
+                        len(item[field].strip()) > 0,
+                        f"Field '{field}' in item {index} cannot be empty",
+                    )
+
+    def test_questions_subcategory_schema(self):
+        """Verify subcategory field presence and value rules across questions."""
+        for index, item in enumerate(self.questions):
+            self.assertIn(
+                "subcategory",
+                item,
+                f"Item at index {index} missing 'subcategory' field",
+            )
+            self.assertIsInstance(
+                item["subcategory"],
+                str,
+                f"Field 'subcategory' in item {index} must be a string",
+            )
+            if item.get("category") == "Pride and Prejudice":
+                self.assertEqual(
+                    item.get("subcategory"),
+                    "Characters",
+                    f"Expected subcategory 'Characters' for Pride and Prejudice at index {index}",
+                )
+            else:
+                self.assertEqual(
+                    item.get("subcategory"),
+                    "",
+                    f"Expected empty subcategory for category '{item.get('category')}' at index {index}",
                 )
 
     def test_novels_publication_years_covered(self):
@@ -126,6 +153,11 @@ def test_questions_data():
         assert isinstance(q.get("question"), str) and len(q["question"]) > 0
         assert str(q.get("answer", "")).strip() != ""
         assert isinstance(q.get("category"), str) and len(q["category"]) > 0
+        assert isinstance(q.get("subcategory"), str)
+        if q.get("category") == "Pride and Prejudice":
+            assert q.get("subcategory") == "Characters"
+        else:
+            assert q.get("subcategory") == ""
 
 
 if __name__ == "__main__":

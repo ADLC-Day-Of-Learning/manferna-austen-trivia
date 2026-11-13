@@ -64,6 +64,7 @@ class TestAustenFunctions(unittest.TestCase):
             "question": "In what year was Pride and Prejudice published?",
             "answer": "1813",
             "category": "Publication Year",
+            "subcategory": "",
         }
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             result = austen.play_question(question_item)
@@ -78,6 +79,7 @@ class TestAustenFunctions(unittest.TestCase):
             "question": "In what year was Pride and Prejudice published?",
             "answer": "1813",
             "category": "Publication Year",
+            "subcategory": "",
         }
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             result = austen.play_question(question_item)
@@ -92,6 +94,7 @@ class TestAustenFunctions(unittest.TestCase):
             "question": "In what year was Pride and Prejudice published?",
             "answer": "1813",
             "category": "Publication Year",
+            "subcategory": "",
         }
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             result = austen.play_question(question_item)
