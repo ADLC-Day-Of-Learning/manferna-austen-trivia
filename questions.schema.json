@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "questions.schema.json",
+  "title": "Jane Austen Trivia Questions Schema",
+  "description": "JSON Schema defining the structure, taxonomy, and question inventory for the Jane Austen trivia questions dataset. Specifies 3 categories ('Publication Year' with 6 questions, 'Adaptations' with 5 questions, 'Pride and Prejudice' with 7 questions), the subcategories (1 named subcategory 'Characters' with 7 questions under 'Pride and Prejudice', and empty string for other categories), and the total count of 18 questions.",
+  "type": "array",
+  "minItems": 18,
+  "metadata": {
+    "totalQuestions": 18,
+    "categories": {
+      "count": 3,
+      "names": [
+        "Publication Year",
+        "Adaptations",
+        "Pride and Prejudice"
+      ],
+      "breakdown": [
+        {
+          "name": "Publication Year",
+          "questionCount": 6,
+          "subcategories": {
+            "count": 0,
+            "names": []
+          }
+        },
+        {
+          "name": "Adaptations",
+          "questionCount": 5,
+          "subcategories": {
+            "count": 0,
+            "names": []
+          }
+        },
+        {
+          "name": "Pride and Prejudice",
+          "questionCount": 7,
+          "subcategories": {
+            "count": 1,
+            "names": [
+              "Characters"
+            ],
+            "breakdown": [
+              {
+                "name": "Characters",
+                "questionCount": 7
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "subcategories": {
+      "count": 1,
+      "names": [
+        "Characters"
+      ]
+    }
+  },
+  "definitions": {
+    "category": {
+      "type": "string",
+      "description": "Category name (3 total categories).",
+      "enum": [
+        "Publication Year",
+        "Adaptations",
+        "Pride and Prejudice"
+      ]
+    },
+    "subcategory": {
+      "type": "string",
+      "description": "Subcategory name (1 named subcategory 'Characters', or empty string '' for none).",
+      "enum": [
+        "",
+        "Characters"
+      ]
+    }
+  },
+  "items": {
+    "type": "object",
+    "required": [
+      "question",
+      "answer",
+      "category",
+      "subcategory"
+    ],
+    "properties": {
+      "question": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The trivia question text."
+      },
+      "answer": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The expected answer to the trivia question."
+      },
+      "category": {
+        "type": "string",
+        "description": "Question category. There are 3 categories: 'Publication Year' (6 questions), 'Adaptations' (5 questions), and 'Pride and Prejudice' (7 questions).",
+        "enum": [
+          "Publication Year",
+          "Adaptations",
+          "Pride and Prejudice"
+        ]
+      },
+      "subcategory": {
+        "type": "string",
+        "description": "Question subcategory. 'Characters' (7 questions under 'Pride and Prejudice') or empty string '' (11 questions across 'Publication Year' and 'Adaptations').",
+        "enum": [
+          "",
+          "Characters"
+        ]
+      }
+    },
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "category": {
+              "const": "Pride and Prejudice"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "subcategory": {
+              "const": "Characters"
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "properties": {
+            "category": {
+              "enum": [
+                "Publication Year",
+                "Adaptations"
+              ]
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "subcategory": {
+              "const": ""
+            }
+          }
+        }
+      }
+    ]
+  }
+}
