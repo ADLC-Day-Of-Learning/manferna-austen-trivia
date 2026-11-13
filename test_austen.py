@@ -99,7 +99,7 @@ class TestAustenFunctions(unittest.TestCase):
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             result = austen.play_question(question_item)
             output = mock_stdout.getvalue()
-        self.assertFalse(result)
+        self.assertIsNone(result)
         self.assertIn("Exiting", output)
 
     def test_parse_args_with_question_flag(self):
