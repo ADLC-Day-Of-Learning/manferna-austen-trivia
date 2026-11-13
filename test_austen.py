@@ -127,6 +127,110 @@ class TestAustenFunctions(unittest.TestCase):
         self.assertIn("Error:", err_output)
 
 
+class TestScoreTracking(unittest.TestCase):
+    """Unit tests for ScoreTracker and score tracking integration."""
+
+    def test_score_tracker_initial_state(self):
+        tracker = austen.ScoreTracker()
+        self.assertEqual(tracker.correct, 0)
+        self.assertEqual(tracker.incorrect, 0)
+        self.assertEqual(tracker.total, 0)
+
+    def test_counters_increment_and_reset_at_ten(self):
+        tracker = austen.ScoreTracker()
+        self.assertEqual((tracker.correct, tracker.incorrect), (0, 0))
+
+        # Record 6 correct and 3 incorrect answers
+        for _ in range(6):
+            tracker.record_answer(is_correct=True)
+        for _ in range(3):
+            tracker.record_answer(is_correct=False)
+
+        self.assertEqual(tracker.correct, 6)
+        self.assertEqual(tracker.incorrect, 3)
+        self.assertEqual(tracker.total, 9)
+
+        # 10th answer completes the set and triggers reset
+        reset_triggered = tracker.record_answer(is_correct=True)
+        self.assertTrue(reset_triggered)
+        self.assertEqual(tracker.correct, 0)
+        self.assertEqual(tracker.incorrect, 0)
+        self.assertEqual(tracker.total, 0)
+
+    def test_counters_reset_on_tenth_incorrect_answer(self):
+        tracker = austen.ScoreTracker()
+        for _ in range(9):
+            tracker.record_answer(is_correct=True)
+        self.assertEqual(tracker.correct, 9)
+        self.assertEqual(tracker.incorrect, 0)
+
+        reset_triggered = tracker.record_answer(is_correct=False)
+        self.assertTrue(reset_triggered)
+        self.assertEqual(tracker.correct, 0)
+        self.assertEqual(tracker.incorrect, 0)
+
+    def test_score_tracker_manual_reset(self):
+        tracker = austen.ScoreTracker()
+        tracker.record_answer(True)
+        tracker.record_answer(False)
+        tracker.reset()
+        self.assertEqual(tracker.correct, 0)
+        self.assertEqual(tracker.incorrect, 0)
+
+    def test_score_tracker_custom_max_questions(self):
+        tracker = austen.ScoreTracker(max_questions=3)
+        tracker.record_answer(True)
+        tracker.record_answer(False)
+        reset = tracker.record_answer(True)
+        self.assertTrue(reset)
+        self.assertEqual(tracker.correct, 0)
+        self.assertEqual(tracker.incorrect, 0)
+
+    def test_play_question_with_tracker_records_answers(self):
+        tracker = austen.ScoreTracker()
+        question_item = {
+            "question": "In what year was Pride and Prejudice published?",
+            "answer": "1813",
+            "category": "Publication Year",
+        }
+        with patch("builtins.input", return_value="1813"):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                res = austen.play_question(question_item, tracker=tracker)
+                output = mock_stdout.getvalue()
+        self.assertTrue(res)
+        self.assertEqual(tracker.correct, 1)
+        self.assertEqual(tracker.incorrect, 0)
+        self.assertIn("Score: 1 correct, 0 incorrect", output)
+
+        with patch("builtins.input", return_value="1820"):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                res = austen.play_question(question_item, tracker=tracker)
+                output = mock_stdout.getvalue()
+        self.assertFalse(res)
+        self.assertEqual(tracker.correct, 1)
+        self.assertEqual(tracker.incorrect, 1)
+        self.assertIn("Score: 1 correct, 1 incorrect", output)
+
+    def test_play_question_with_tracker_reset_message(self):
+        tracker = austen.ScoreTracker()
+        for _ in range(9):
+            tracker.record_answer(True)
+        question_item = {
+            "question": "In what year was Pride and Prejudice published?",
+            "answer": "1813",
+            "category": "Publication Year",
+        }
+        with patch("builtins.input", return_value="1813"):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                res = austen.play_question(question_item, tracker=tracker)
+                output = mock_stdout.getvalue()
+        self.assertTrue(res)
+        self.assertEqual(tracker.correct, 0)
+        self.assertEqual(tracker.incorrect, 0)
+        self.assertIn("Counters reset to 0 after 10 questions.", output)
+        self.assertIn("Score: 0 correct, 0 incorrect", output)
+
+
 class TestAustenCLI(unittest.TestCase):
     """End-to-end and subprocess CLI tests."""
 
@@ -184,6 +288,24 @@ class TestAustenCLI(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         self.assertIn("--question", result.stdout)
+
+    def test_cli_multi_question_session_with_scoring(self):
+        """Verify CLI tracks scores across consecutive questions and exits cleanly on EOF."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        # Provide two answers followed by EOF
+        result = subprocess.run(
+            [sys.executable, str(script_path), "--question"],
+            input="1813\nwronganswer\n",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Score:", result.stdout)
+        self.assertIn("Exiting", result.stdout)
 
 
 if __name__ == "__main__":

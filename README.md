@@ -18,12 +18,13 @@ or directly:
 ./austen.py -q
 ```
 
-When prompted, type your answer and press Enter. Answers are evaluated case-insensitively with leading and trailing whitespace trimmed:
+When prompted, type your answer and press Enter. Answers are evaluated case-insensitively with leading and trailing whitespace trimmed. The game keeps track of correct and incorrect answers, resetting the counters to 0 after 10 questions:
 
 ```text
 In what year was Pride and Prejudice published?
 Your answer: 1813
 Correct!
+Score: 1 correct, 0 incorrect
 ```
 
 To exit prematurely, send EOF (`Ctrl+D`) or interrupt (`Ctrl+C`).
