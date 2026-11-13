@@ -6,7 +6,7 @@ A trivia game about Jane Austen books.
 
 ### Play Trivia
 
-Run `austen.py` with the `--question` (or `-q`) flag to retrieve and answer a random trivia question:
+Run `austen.py` with the `--question` (or `-q`) flag to play trivia questions with score tracking:
 
 ```bash
 python3 austen.py --question
@@ -27,7 +27,7 @@ Correct!
 Score: 1 correct, 0 incorrect
 ```
 
-To exit prematurely, send EOF (`Ctrl+D`) or interrupt (`Ctrl+C`).
+To exit the session, send EOF (`Ctrl+D`) or interrupt (`Ctrl+C`).
 
 ### Help
 

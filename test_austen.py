@@ -150,9 +150,13 @@ class TestScoreTracking(unittest.TestCase):
         self.assertEqual(tracker.incorrect, 3)
         self.assertEqual(tracker.total, 9)
 
-        # 10th answer completes the set and triggers reset
+        # 10th answer completes the set and triggers reset condition
         reset_triggered = tracker.record_answer(is_correct=True)
         self.assertTrue(reset_triggered)
+        self.assertEqual(tracker.correct, 7)
+        self.assertEqual(tracker.incorrect, 3)
+        self.assertEqual(tracker.total, 10)
+        tracker.reset()
         self.assertEqual(tracker.correct, 0)
         self.assertEqual(tracker.incorrect, 0)
         self.assertEqual(tracker.total, 0)
@@ -166,6 +170,9 @@ class TestScoreTracking(unittest.TestCase):
 
         reset_triggered = tracker.record_answer(is_correct=False)
         self.assertTrue(reset_triggered)
+        self.assertEqual(tracker.correct, 9)
+        self.assertEqual(tracker.incorrect, 1)
+        tracker.reset()
         self.assertEqual(tracker.correct, 0)
         self.assertEqual(tracker.incorrect, 0)
 
@@ -183,6 +190,9 @@ class TestScoreTracking(unittest.TestCase):
         tracker.record_answer(False)
         reset = tracker.record_answer(True)
         self.assertTrue(reset)
+        self.assertEqual(tracker.correct, 2)
+        self.assertEqual(tracker.incorrect, 1)
+        tracker.reset()
         self.assertEqual(tracker.correct, 0)
         self.assertEqual(tracker.incorrect, 0)
 
@@ -227,8 +237,27 @@ class TestScoreTracking(unittest.TestCase):
         self.assertTrue(res)
         self.assertEqual(tracker.correct, 0)
         self.assertEqual(tracker.incorrect, 0)
+        self.assertIn("Score: 10 correct, 0 incorrect", output)
         self.assertIn("Counters reset to 0 after 10 questions.", output)
-        self.assertIn("Score: 0 correct, 0 incorrect", output)
+
+    def test_play_question_with_custom_max_questions(self):
+        tracker = austen.ScoreTracker(max_questions=3)
+        tracker.record_answer(True)
+        tracker.record_answer(False)
+        question_item = {
+            "question": "In what year was Pride and Prejudice published?",
+            "answer": "1813",
+            "category": "Publication Year",
+        }
+        with patch("builtins.input", return_value="1813"):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                res = austen.play_question(question_item, tracker=tracker)
+                output = mock_stdout.getvalue()
+        self.assertTrue(res)
+        self.assertEqual(tracker.correct, 0)
+        self.assertEqual(tracker.incorrect, 0)
+        self.assertIn("Score: 2 correct, 1 incorrect", output)
+        self.assertIn("Counters reset to 0 after 3 questions.", output)
 
 
 class TestAustenCLI(unittest.TestCase):

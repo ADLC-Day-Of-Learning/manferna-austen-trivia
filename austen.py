@@ -33,7 +33,7 @@ def check_answer(user_answer: str, expected_answer: str) -> bool:
 
 
 class ScoreTracker:
-    """Tracks correct and incorrect question counts, resetting after 10 questions."""
+    """Tracks correct and incorrect question counts, resetting after max_questions."""
 
     def __init__(self, max_questions: int = 10):
         self.max_questions = max_questions
@@ -51,14 +51,13 @@ class ScoreTracker:
         self.incorrect = 0
 
     def record_answer(self, is_correct: bool) -> bool:
-        """Record an answer and reset counters to 0 when reaching max_questions."""
+        """Record an answer and return True when reaching max_questions."""
         if is_correct:
             self.correct += 1
         else:
             self.incorrect += 1
 
-        if (self.correct + self.incorrect) >= self.max_questions:
-            self.reset()
+        if self.total >= self.max_questions:
             return True
         return False
 
@@ -83,9 +82,10 @@ def play_question(
 
     if tracker is not None:
         reset = tracker.record_answer(is_correct)
-        if reset:
-            print("Counters reset to 0 after 10 questions.")
         print(f"Score: {tracker.correct} correct, {tracker.incorrect} incorrect")
+        if reset:
+            print(f"Counters reset to 0 after {tracker.max_questions} questions.")
+            tracker.reset()
 
     return is_correct
 
@@ -122,18 +122,15 @@ def main(args=None):
         return 1
 
     tracker = ScoreTracker()
-    try:
-        first = True
-        while True:
-            if not first:
-                print()
-            first = False
-            question = random.choice(questions)
-            result = play_question(question, tracker=tracker)
-            if result is None:
-                break
-    except (EOFError, KeyboardInterrupt):
-        print("\nExiting.")
+    first = True
+    while True:
+        if not first:
+            print()
+        first = False
+        question = random.choice(questions)
+        result = play_question(question, tracker=tracker)
+        if result is None:
+            break
 
     return 0
 
