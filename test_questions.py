@@ -59,7 +59,7 @@ class TestQuestionsData(unittest.TestCase):
                     "Characters",
                     f"Expected subcategory 'Characters' for Pride and Prejudice at index {index}",
                 )
-            elif item.get("category") in ("Jane Austen", "jane Austen"):
+            elif item.get("category") == "Jane Austen":
                 self.assertEqual(
                     item.get("subcategory"),
                     "facts",
@@ -151,11 +151,13 @@ class TestQuestionsData(unittest.TestCase):
 
     def test_jane_austen_adult_life_questions(self):
         """Verify presence and schema of 10 questions on Jane Austen adult life."""
+        category = "Jane Austen"
+        subcategory = "facts"
         austen_facts = [
             q
             for q in self.questions
-            if q.get("category", "").lower() == "jane austen"
-            and q.get("subcategory", "").lower() == "facts"
+            if q.get("category") == category
+            and q.get("subcategory") == subcategory
         ]
 
         self.assertGreaterEqual(
@@ -168,8 +170,8 @@ class TestQuestionsData(unittest.TestCase):
             self.assertTrue(len(item["question"].strip()) > 0)
             self.assertIsInstance(item.get("answer"), str)
             self.assertTrue(len(item["answer"].strip()) > 0)
-            self.assertIn(item.get("category"), ("Jane Austen", "jane Austen"))
-            self.assertEqual(item.get("subcategory"), "facts")
+            self.assertEqual(item.get("category"), category)
+            self.assertEqual(item.get("subcategory"), subcategory)
 
 
 def test_questions_data():
@@ -188,42 +190,10 @@ def test_questions_data():
         assert isinstance(q.get("subcategory"), str)
         if q.get("category") == "Pride and Prejudice":
             assert q.get("subcategory") == "Characters"
-        elif q.get("category") in ("Jane Austen", "jane Austen"):
+        elif q.get("category") == "Jane Austen":
             assert q.get("subcategory") == "facts"
         else:
             assert q.get("subcategory") == ""
-
-
-def test_jane_austen_adult_life_questions():
-    """Verify presence and schema of 10 questions on Jane Austen adult life."""
-    path = Path("questions.json")
-    if not path.is_file():
-        path = QUESTIONS_FILE
-    assert path.is_file(), "questions.json must exist"
-    with open(path, "r", encoding="utf-8") as f:
-        questions = json.load(f)
-
-    austen_facts = [
-        q
-        for q in questions
-        if q.get("category", "").lower() == "jane austen"
-        and q.get("subcategory", "").lower() == "facts"
-    ]
-
-    assert (
-        len(austen_facts) >= 10
-    ), f"Expected at least 10 questions, found {len(austen_facts)}"
-    for item in austen_facts:
-        assert (
-            isinstance(item.get("question"), str)
-            and len(item["question"].strip()) > 0
-        )
-        assert (
-            isinstance(item.get("answer"), str)
-            and len(item["answer"].strip()) > 0
-        )
-        assert item.get("category") in ("Jane Austen", "jane Austen")
-        assert item.get("subcategory") == "facts"
 
 
 if __name__ == "__main__":
