@@ -101,17 +101,19 @@ class TestQuestionsData(unittest.TestCase):
             self.assertEqual(item.get("category"), category)
 
     def test_pride_and_prejudice_characters_category(self):
-        category = "Pride and Prejudice"
-        subcategory = "Characters"
+        category = "Characters from Pride and Prejudice"
         character_questions = [
-            q
-            for q in self.questions
-            if q.get("category") == category and q.get("subcategory") == subcategory
+            q for q in self.questions if q.get("category") == category
         ]
-        self.assertGreaterEqual(
+        self.assertEqual(
             len(character_questions),
             7,
-            f"Expected at least 7 questions in category '{category}' and subcategory '{subcategory}'",
+            f"Expected 7 questions in category '{category}'",
+        )
+        self.assertGreaterEqual(
+            len(character_questions),
+            3,
+            f"Expected at least 3 questions in category '{category}'",
         )
         for item in character_questions:
             self.assertIsInstance(item.get("question"), str)
@@ -119,7 +121,6 @@ class TestQuestionsData(unittest.TestCase):
             self.assertIsInstance(item.get("answer"), str)
             self.assertTrue(len(item["answer"].strip()) > 0)
             self.assertEqual(item.get("category"), category)
-            self.assertEqual(item.get("subcategory"), subcategory)
 
         expected_characters = [
             "Elizabeth Bennet",
