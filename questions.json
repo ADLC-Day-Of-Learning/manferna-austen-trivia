@@ -2,89 +2,109 @@
   {
     "question": "In what year was Sense and Sensibility published?",
     "answer": "1811",
-    "category": "Publication Year"
+    "category": "Publication Year",
+    "subcategory": ""
   },
   {
     "question": "In what year was Pride and Prejudice published?",
     "answer": "1813",
-    "category": "Publication Year"
+    "category": "Publication Year",
+    "subcategory": ""
   },
   {
     "question": "In what year was Mansfield Park published?",
     "answer": "1814",
-    "category": "Publication Year"
+    "category": "Publication Year",
+    "subcategory": ""
   },
   {
     "question": "In what year was Emma published?",
     "answer": "1815",
-    "category": "Publication Year"
+    "category": "Publication Year",
+    "subcategory": ""
   },
   {
     "question": "In what year was Northanger Abbey published?",
     "answer": "1818",
-    "category": "Publication Year"
+    "category": "Publication Year",
+    "subcategory": ""
   },
   {
     "question": "In what year was Persuasion published?",
     "answer": "1818",
-    "category": "Publication Year"
+    "category": "Publication Year",
+    "subcategory": ""
   },
   {
     "question": "Who played Mr. Darcy opposite Jennifer Ehle's Elizabeth Bennet in the 1995 BBC television adaptation of Pride and Prejudice?",
     "answer": "Colin Firth",
-    "category": "Adaptations"
+    "category": "Adaptations",
+    "subcategory": ""
   },
   {
     "question": "Which actress received an Academy Award nomination for Best Actress for her portrayal of Elizabeth Bennet in the 2005 film adaptation directed by Joe Wright?",
     "answer": "Keira Knightley",
-    "category": "Adaptations"
+    "category": "Adaptations",
+    "subcategory": ""
   },
   {
     "question": "Who directed the 2004 Bollywood-style adaptation titled Bride and Prejudice starring Aishwarya Rai?",
     "answer": "Gurinder Chadha",
-    "category": "Adaptations"
+    "category": "Adaptations",
+    "subcategory": ""
   },
   {
     "question": "Which actor portrayed Mr. Darcy opposite Greer Garson in the 1940 film adaptation of Pride and Prejudice?",
     "answer": "Laurence Olivier",
-    "category": "Adaptations"
+    "category": "Adaptations",
+    "subcategory": ""
   },
   {
     "question": "What 2001 romantic comedy film starring Renée Zellweger and Colin Firth was loosely based on Pride and Prejudice?",
     "answer": "Bridget Jones's Diary",
-    "category": "Adaptations"
+    "category": "Adaptations",
+    "subcategory": ""
+  },
+  {
     "question": "Who is the protagonist of Pride and Prejudice and the second eldest Bennet daughter?",
     "answer": "Elizabeth Bennet",
-    "category": "Characters from Pride and Prejudice"
+    "category": "Pride and Prejudice",
+    "subcategory": "Characters"
   },
   {
     "question": "Who is the master of Pemberley who eventually marries Elizabeth Bennet?",
     "answer": "Fitzwilliam Darcy",
-    "category": "Characters from Pride and Prejudice"
+    "category": "Pride and Prejudice",
+    "subcategory": "Characters"
   },
   {
     "question": "Who is the eldest Bennet sister, known for her kindness and beauty?",
     "answer": "Jane Bennet",
-    "category": "Characters from Pride and Prejudice"
+    "category": "Pride and Prejudice",
+    "subcategory": "Characters"
   },
   {
     "question": "Who is the wealthy and amiable gentleman who leases Netherfield Park?",
     "answer": "Charles Bingley",
-    "category": "Characters from Pride and Prejudice"
+    "category": "Pride and Prejudice",
+    "subcategory": "Characters"
   },
   {
     "question": "Who is the sycophantic clergyman set to inherit the Longbourn estate?",
     "answer": "Mr. Collins",
-    "category": "Characters from Pride and Prejudice"
+    "category": "Pride and Prejudice",
+    "subcategory": "Characters"
   },
   {
     "question": "Who is the militia officer who elopes with Lydia Bennet?",
     "answer": "George Wickham",
-    "category": "Characters from Pride and Prejudice"
+    "category": "Pride and Prejudice",
+    "subcategory": "Characters"
   },
   {
     "question": "Who is Mr. Darcy's arrogant aunt and patroness of Mr. Collins?",
     "answer": "Lady Catherine de Bourgh",
-    "category": "Characters from Pride and Prejudice"
+    "category": "Pride and Prejudice",
+    "subcategory": "Characters"
   }
 ]
