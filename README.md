@@ -29,6 +29,20 @@ Score: 1 correct, 0 incorrect
 
 To exit the session, send EOF (`Ctrl+D`) or interrupt (`Ctrl+C`).
 
+### Survival Mode
+
+Run `austen.py` with the `--survival` (or `-s`) flag to play in survival mode. In this mode, the game finishes when the player answers incorrectly:
+
+```bash
+python3 austen.py --survival
+```
+
+or directly:
+
+```bash
+./austen.py -s
+```
+
 ### Help
 
 To view available command-line options:

@@ -97,6 +97,12 @@ def build_parser():
         action="store_true",
         help="Retrieve and play trivia questions with score tracking",
     )
+    parser.add_argument(
+        "-s",
+        "--survival",
+        action="store_true",
+        help="Play trivia in survival mode (ends when an answer is incorrect)",
+    )
     return parser
 
 
@@ -109,7 +115,7 @@ def main(args=None):
     """Entrypoint for the CLI game."""
     parsed_args = parse_args(args)
 
-    if not parsed_args.question:
+    if not parsed_args.question and not parsed_args.survival:
         build_parser().print_help()
         return 0
 
@@ -128,6 +134,8 @@ def main(args=None):
         question = random.choice(questions)
         result = play_question(question, tracker=tracker)
         if result is None:
+            break
+        if parsed_args.survival and not result:
             break
 
     return 0
