@@ -1,0 +1,32 @@
+[
+  {
+    "question": "In what year was Sense and Sensibility published?",
+    "answer": "1811",
+    "category": "Publication Year"
+  },
+  {
+    "question": "In what year was Pride and Prejudice published?",
+    "answer": "1813",
+    "category": "Publication Year"
+  },
+  {
+    "question": "In what year was Mansfield Park published?",
+    "answer": "1814",
+    "category": "Publication Year"
+  },
+  {
+    "question": "In what year was Emma published?",
+    "answer": "1815",
+    "category": "Publication Year"
+  },
+  {
+    "question": "In what year was Northanger Abbey published?",
+    "answer": "1818",
+    "category": "Publication Year"
+  },
+  {
+    "question": "In what year was Persuasion published?",
+    "answer": "1818",
+    "category": "Publication Year"
+  }
+]
