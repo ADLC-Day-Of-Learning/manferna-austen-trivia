@@ -56,6 +56,23 @@ class TestQuestionsData(unittest.TestCase):
                 f"Expected novel '{novel}' to be mentioned in questions",
             )
 
+    def test_adaptations_category_questions(self):
+        category = "Adaptations"
+        adaptation_questions = [
+            q for q in self.questions if q.get("category") == category
+        ]
+        self.assertGreaterEqual(
+            len(adaptation_questions),
+            5,
+            f"Expected at least 5 questions in category '{category}'",
+        )
+        for item in adaptation_questions:
+            self.assertIsInstance(item.get("question"), str)
+            self.assertTrue(len(item["question"].strip()) > 0)
+            self.assertIsInstance(item.get("answer"), str)
+            self.assertTrue(len(item["answer"].strip()) > 0)
+            self.assertEqual(item.get("category"), category)
+
 
 def test_questions_data():
     """Triage proposed test case compatibility function."""
