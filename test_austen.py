@@ -124,6 +124,16 @@ class TestAustenFunctions(unittest.TestCase):
         args = austen.parse_args([])
         self.assertFalse(args.survival)
 
+    def test_parse_args_conflicting_question_and_survival_flags_rejected(self):
+        with patch("sys.stderr", new_callable=io.StringIO):
+            with self.assertRaises(SystemExit) as cm:
+                austen.parse_args(["-q", "-s"])
+            self.assertEqual(cm.exception.code, 2)
+
+            with self.assertRaises(SystemExit) as cm:
+                austen.parse_args(["--question", "--survival"])
+            self.assertEqual(cm.exception.code, 2)
+
     def test_main_without_args_prints_help(self):
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             exit_code = austen.main([])
@@ -467,6 +477,22 @@ class TestAustenCLI(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("Score:", result.stdout)
         self.assertIn("Exiting", result.stdout)
+
+    def test_cli_conflicting_question_and_survival_flags_rejected(self):
+        """Verify passing both --question and --survival flags exits with code 2."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        for flags in [("-q", "-s"), ("--question", "--survival")]:
+            result = subprocess.run(
+                [sys.executable, str(script_path), *flags],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                cwd=str(repo_root),
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("not allowed with argument", result.stderr.lower())
 
 
 if __name__ == "__main__":
