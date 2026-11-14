@@ -137,6 +137,7 @@ def main(args=None):
     deck = list(questions)
     random.shuffle(deck)
     first = True
+    last_question = None
     while True:
         if not first:
             print()
@@ -147,8 +148,15 @@ def main(args=None):
             print()
             deck = list(questions)
             random.shuffle(deck)
+            if (
+                len(deck) > 1
+                and last_question is not None
+                and deck[-1]["question"] == last_question["question"]
+            ):
+                deck[-1], deck[0] = deck[0], deck[-1]
 
         question = deck.pop()
+        last_question = question
         result = play_question(question, tracker=tracker)
         if result is None:
             break
