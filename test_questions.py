@@ -623,6 +623,31 @@ class TestQuestionsSchemaFile(unittest.TestCase):
             f"Conflicting conditional schema should not trigger when category is missing: {error_messages}",
         )
 
+    def test_schema_has_no_duplicate_or_unreferenced_enum_definitions(self):
+        """Verify category and subcategory enums are defined in exactly one place."""
+        item_props = self.schema.get("items", {}).get("properties", {})
+        defs = self.schema.get("definitions", {})
+
+        for prop_name in ("category", "subcategory"):
+            in_props = "enum" in item_props.get(prop_name, {})
+            in_defs = "enum" in defs.get(prop_name, {})
+            # Disallow duplicate enum declarations across definitions and inline properties
+            self.assertFalse(
+                in_props and in_defs,
+                f"'{prop_name}' enum is duplicated in both items.properties and definitions",
+            )
+            if in_defs:
+                self.assertEqual(
+                    item_props.get(prop_name, {}).get("$ref"),
+                    f"#/definitions/{prop_name}",
+                    f"Expected items.properties.{prop_name} to reference #/definitions/{prop_name}",
+                )
+        self.assertNotIn(
+            "definitions",
+            self.schema,
+            "Unused top-level definitions block should be removed to eliminate redundant schemas",
+        )
+
 
 def test_questions_data():
     """Triage proposed test case compatibility function."""

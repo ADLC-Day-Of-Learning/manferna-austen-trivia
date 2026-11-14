@@ -91,28 +91,6 @@
       ]
     }
   },
-  "definitions": {
-    "category": {
-      "type": "string",
-      "description": "Category name (5 total categories).",
-      "enum": [
-        "Publication Year",
-        "Adaptations",
-        "Pride and Prejudice",
-        "Jane Austen",
-        "Persuasion"
-      ]
-    },
-    "subcategory": {
-      "type": "string",
-      "description": "Subcategory name (named subcategories 'Characters' and 'facts', or empty string '' for none).",
-      "enum": [
-        "",
-        "Characters",
-        "facts"
-      ]
-    }
-  },
   "items": {
     "type": "object",
     "required": [
