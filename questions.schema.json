@@ -2,17 +2,18 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "questions.schema.json",
   "title": "Jane Austen Trivia Questions Schema",
-  "description": "JSON Schema defining the structure, taxonomy, and question inventory for the Jane Austen trivia questions dataset. Specifies 3 categories ('Publication Year' with 6 questions, 'Adaptations' with 5 questions, 'Pride and Prejudice' with 7 questions), the subcategories (1 named subcategory 'Characters' with 7 questions under 'Pride and Prejudice', and empty string for other categories), and the total count of 18 questions.",
+  "description": "JSON Schema defining the structure, taxonomy, and question inventory for the Jane Austen trivia questions dataset. Specifies 4 categories ('Publication Year' with 6 questions, 'Adaptations' with 5 questions, 'Pride and Prejudice' with 7 questions, and 'Jane Austen' with 10 questions), the subcategories (named subcategories 'Characters' with 7 questions under 'Pride and Prejudice' and 'facts' with 10 questions under 'Jane Austen', and empty string for other categories), and the total count of 28 questions.",
   "type": "array",
-  "minItems": 18,
+  "minItems": 28,
   "metadata": {
-    "totalQuestions": 18,
+    "totalQuestions": 28,
     "categories": {
-      "count": 3,
+      "count": 4,
       "names": [
         "Publication Year",
         "Adaptations",
-        "Pride and Prejudice"
+        "Pride and Prejudice",
+        "Jane Austen"
       ],
       "breakdown": [
         {
@@ -46,32 +47,51 @@
               }
             ]
           }
+        },
+        {
+          "name": "Jane Austen",
+          "questionCount": 10,
+          "subcategories": {
+            "count": 1,
+            "names": [
+              "facts"
+            ],
+            "breakdown": [
+              {
+                "name": "facts",
+                "questionCount": 10
+              }
+            ]
+          }
         }
       ]
     },
     "subcategories": {
-      "count": 1,
+      "count": 2,
       "names": [
-        "Characters"
+        "Characters",
+        "facts"
       ]
     }
   },
   "definitions": {
     "category": {
       "type": "string",
-      "description": "Category name (3 total categories).",
+      "description": "Category name (4 total categories).",
       "enum": [
         "Publication Year",
         "Adaptations",
-        "Pride and Prejudice"
+        "Pride and Prejudice",
+        "Jane Austen"
       ]
     },
     "subcategory": {
       "type": "string",
-      "description": "Subcategory name (1 named subcategory 'Characters', or empty string '' for none).",
+      "description": "Subcategory name (named subcategories 'Characters' and 'facts', or empty string '' for none).",
       "enum": [
         "",
-        "Characters"
+        "Characters",
+        "facts"
       ]
     }
   },
@@ -96,19 +116,21 @@
       },
       "category": {
         "type": "string",
-        "description": "Question category. There are 3 categories: 'Publication Year' (6 questions), 'Adaptations' (5 questions), and 'Pride and Prejudice' (7 questions).",
+        "description": "Question category. There are 4 categories: 'Publication Year' (6 questions), 'Adaptations' (5 questions), 'Pride and Prejudice' (7 questions), and 'Jane Austen' (10 questions).",
         "enum": [
           "Publication Year",
           "Adaptations",
-          "Pride and Prejudice"
+          "Pride and Prejudice",
+          "Jane Austen"
         ]
       },
       "subcategory": {
         "type": "string",
-        "description": "Question subcategory. 'Characters' (7 questions under 'Pride and Prejudice') or empty string '' (11 questions across 'Publication Year' and 'Adaptations').",
+        "description": "Question subcategory. 'Characters' (7 questions under 'Pride and Prejudice'), 'facts' (10 questions under 'Jane Austen'), or empty string '' (11 questions across 'Publication Year' and 'Adaptations').",
         "enum": [
           "",
-          "Characters"
+          "Characters",
+          "facts"
         ]
       }
     },
@@ -116,6 +138,9 @@
     "allOf": [
       {
         "if": {
+          "required": [
+            "category"
+          ],
           "properties": {
             "category": {
               "const": "Pride and Prejudice"
@@ -132,6 +157,9 @@
       },
       {
         "if": {
+          "required": [
+            "category"
+          ],
           "properties": {
             "category": {
               "enum": [
@@ -145,6 +173,25 @@
           "properties": {
             "subcategory": {
               "const": ""
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "category"
+          ],
+          "properties": {
+            "category": {
+              "const": "Jane Austen"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "subcategory": {
+              "const": "facts"
             }
           }
         }
