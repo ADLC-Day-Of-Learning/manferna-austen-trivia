@@ -94,13 +94,14 @@ def play_question(
 def build_parser():
     """Build the argument parser for CLI commands."""
     parser = argparse.ArgumentParser(description="Jane Austen Trivia CLI")
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-q",
         "--question",
         action="store_true",
         help="Retrieve and play trivia questions with score tracking",
     )
-    parser.add_argument(
+    group.add_argument(
         "-s",
         "--survival",
         action="store_true",
