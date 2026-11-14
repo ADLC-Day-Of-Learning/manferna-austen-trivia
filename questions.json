@@ -166,5 +166,65 @@
     "answer": "Winchester Cathedral",
     "category": "Jane Austen",
     "subcategory": "facts"
+  },
+  {
+    "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
+    "answer": "Anne Elliot",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "Who is the naval officer who returns to England after having been previously engaged to Anne Elliot?",
+    "answer": "Captain Frederick Wentworth",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "Who is Anne Elliot's vain and spendthrift baronet father who leases Kellynch Hall?",
+    "answer": "Sir Walter Elliot",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "Which close family friend and godmother persuaded Anne Elliot to break off her engagement to Frederick Wentworth?",
+    "answer": "Lady Russell",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "Which sister of Charles Musgrove suffers a serious fall from the Cobb in Lyme Regis?",
+    "answer": "Louisa Musgrove",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "True or False: Admiral Croft and his wife Sophia lease Kellynch Hall from Sir Walter Elliot.",
+    "answer": "True",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "True or False: Anne Elliot is the eldest daughter of Sir Walter Elliot.",
+    "answer": "False",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "True or False: Charles Musgrove was originally interested in marrying Anne Elliot before he married her sister Mary.",
+    "answer": "True",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "True or False: Captain James Benwick eventually marries Anne Elliot's sister Elizabeth.",
+    "answer": "False",
+    "category": "Persuasion",
+    "subcategory": "Characters"
+  },
+  {
+    "question": "True or False: Mrs. Smith is an old school friend of Anne Elliot who reveals the deceitful character of Mr. William Elliot.",
+    "answer": "True",
+    "category": "Persuasion",
+    "subcategory": "Characters"
   }
 ]
