@@ -2,7 +2,13 @@ import json
 import unittest
 from pathlib import Path
 
+try:
+    import jsonschema
+except ImportError:
+    jsonschema = None
+
 QUESTIONS_FILE = Path(__file__).resolve().parent / "questions.json"
+SCHEMA_FILE = Path(__file__).resolve().parent / "questions.schema.json"
 
 
 class TestQuestionsData(unittest.TestCase):
@@ -159,7 +165,6 @@ class TestQuestionsData(unittest.TestCase):
             if q.get("category") == category
             and q.get("subcategory") == subcategory
         ]
-
         self.assertGreaterEqual(
             len(austen_facts),
             10,
@@ -227,6 +232,396 @@ class TestQuestionsData(unittest.TestCase):
             )
         self.assertIn("True", all_answers)
         self.assertIn("False", all_answers)
+
+
+class TestQuestionsSchemaFile(unittest.TestCase):
+    """Test suite for questions JSON schema specification."""
+
+    def setUp(self):
+        self.schema_file = SCHEMA_FILE
+        self.assertTrue(
+            self.schema_file.is_file(), "questions.schema.json must exist"
+        )
+        with open(self.schema_file, "r", encoding="utf-8") as f:
+            self.schema = json.load(f)
+
+    def test_schema_file_exists_and_defines_taxonomy(self):
+        """Verify that questions.schema.json exists and specifies required fields and categories."""
+        schema_path = Path("questions.schema.json")
+        if not schema_path.is_file():
+            schema_path = self.schema_file
+        self.assertTrue(
+            schema_path.is_file(), "questions.schema.json must exist"
+        )
+
+        with open(schema_path, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+
+        item_props = schema.get("items", {}).get(
+            "properties", schema.get("properties", {})
+        )
+        for expected_prop in ("question", "answer", "category", "subcategory"):
+            self.assertIn(expected_prop, item_props)
+
+    def test_schema_is_valid_json_schema(self):
+        """Verify that the schema conforms to the JSON Schema Draft 7 meta-schema."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+        jsonschema.Draft7Validator.check_schema(self.schema)
+        self.assertEqual(self.schema.get("type"), "array")
+        self.assertIn("$schema", self.schema)
+        self.assertGreaterEqual(self.schema.get("minItems", 0), 38)
+
+    def test_schema_specifies_categories(self):
+        """Verify schema specifies category count and category names."""
+        category_prop = (
+            self.schema.get("items", {}).get("properties", {}).get("category", {})
+        )
+        expected_categories = [
+            "Publication Year",
+            "Adaptations",
+            "Pride and Prejudice",
+            "Jane Austen",
+            "Persuasion",
+        ]
+        self.assertIn("enum", category_prop)
+        self.assertEqual(len(category_prop["enum"]), 5)
+        self.assertEqual(set(category_prop["enum"]), set(expected_categories))
+
+        metadata_cats = (
+            self.schema.get("metadata", {}).get("categories", {})
+        )
+        self.assertEqual(metadata_cats.get("count"), 5)
+        self.assertEqual(
+            set(metadata_cats.get("names", [])), set(expected_categories)
+        )
+
+    def test_schema_specifies_subcategories(self):
+        """Verify schema specifies subcategories count and names."""
+        subcat_prop = (
+            self.schema.get("items", {})
+            .get("properties", {})
+            .get("subcategory", {})
+        )
+        self.assertIn("enum", subcat_prop)
+        self.assertIn("Characters", subcat_prop["enum"])
+        self.assertIn("facts", subcat_prop["enum"])
+        self.assertIn("", subcat_prop["enum"])
+
+        metadata_subcats = (
+            self.schema.get("metadata", {}).get("subcategories", {})
+        )
+        self.assertEqual(metadata_subcats.get("count"), 2)
+        self.assertIn("Characters", metadata_subcats.get("names", []))
+        self.assertIn("facts", metadata_subcats.get("names", []))
+
+    def test_schema_specifies_question_counts(self):
+        """Verify schema specifies total and per-category question counts."""
+        metadata = self.schema.get("metadata", {})
+        self.assertEqual(metadata.get("totalQuestions"), 38)
+
+        breakdown = {
+            item["name"]: item["questionCount"]
+            for item in metadata.get("categories", {}).get("breakdown", [])
+        }
+        self.assertEqual(breakdown.get("Publication Year"), 6)
+        self.assertEqual(breakdown.get("Adaptations"), 5)
+        self.assertEqual(breakdown.get("Pride and Prejudice"), 7)
+        self.assertEqual(breakdown.get("Jane Austen"), 10)
+        self.assertEqual(breakdown.get("Persuasion"), 10)
+
+    def _create_valid_dataset(self):
+        """Generate a valid 38-question dataset matching the taxonomy specification."""
+        dataset = []
+        for i in range(6):
+            dataset.append(
+                {
+                    "question": f"Publication question {i + 1}?",
+                    "answer": f"Answer {i + 1}",
+                    "category": "Publication Year",
+                    "subcategory": "",
+                }
+            )
+        for i in range(5):
+            dataset.append(
+                {
+                    "question": f"Adaptation question {i + 1}?",
+                    "answer": f"Answer {i + 1}",
+                    "category": "Adaptations",
+                    "subcategory": "",
+                }
+            )
+        for i in range(7):
+            dataset.append(
+                {
+                    "question": f"Character question {i + 1}?",
+                    "answer": f"Character {i + 1}",
+                    "category": "Pride and Prejudice",
+                    "subcategory": "Characters",
+                }
+            )
+        for i in range(10):
+            dataset.append(
+                {
+                    "question": f"Jane Austen question {i + 1}?",
+                    "answer": f"Austen answer {i + 1}",
+                    "category": "Jane Austen",
+                    "subcategory": "facts",
+                }
+            )
+        for i in range(10):
+            dataset.append(
+                {
+                    "question": f"Persuasion question {i + 1}?",
+                    "answer": f"Persuasion answer {i + 1}",
+                    "category": "Persuasion",
+                    "subcategory": "Characters",
+                }
+            )
+        return dataset
+
+    def test_schema_validates_sample_questions(self):
+        """Verify schema items definition validates individual question objects."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        sample_data = [
+            {
+                "question": "In what year was Sense and Sensibility published?",
+                "answer": "1811",
+                "category": "Publication Year",
+                "subcategory": "",
+            },
+            {
+                "question": "Who played Mr. Darcy in the 1995 BBC television adaptation?",
+                "answer": "Colin Firth",
+                "category": "Adaptations",
+                "subcategory": "",
+            },
+            {
+                "question": "Who is the protagonist of Pride and Prejudice?",
+                "answer": "Elizabeth Bennet",
+                "category": "Pride and Prejudice",
+                "subcategory": "Characters",
+            },
+            {
+                "question": "In which Hampshire village did Jane Austen live from 1809 until 1817?",
+                "answer": "Chawton",
+                "category": "Jane Austen",
+                "subcategory": "facts",
+            },
+            {
+                "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
+                "answer": "Anne Elliot",
+                "category": "Persuasion",
+                "subcategory": "Characters",
+            },
+        ]
+        validator = jsonschema.Draft7Validator(self.schema["items"])
+        for sample in sample_data:
+            errors = list(validator.iter_errors(sample))
+            self.assertEqual(len(errors), 0, f"Validation errors: {errors}")
+
+    def test_schema_validates_full_dataset(self):
+        """Verify schema directly validates a full 38-question dataset without overriding minItems."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        full_dataset = self._create_valid_dataset()
+        validator = jsonschema.Draft7Validator(self.schema)
+        errors = list(validator.iter_errors(full_dataset))
+        self.assertEqual(
+            len(errors), 0, f"Validation errors on full dataset: {errors}"
+        )
+
+    def test_schema_validates_questions_file(self):
+        """Verify questions.json conforms to questions.schema.json."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
+            questions_data = json.load(f)
+
+        validator = jsonschema.Draft7Validator(self.schema)
+        errors = list(validator.iter_errors(questions_data))
+        self.assertEqual(
+            len(errors),
+            0,
+            f"questions.json validation errors against schema: {errors}",
+        )
+
+    def test_schema_rejects_fewer_than_min_items(self):
+        """Verify schema rejects datasets with fewer than minItems (38) questions."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        validator = jsonschema.Draft7Validator(self.schema)
+        dataset_too_short = self._create_valid_dataset()[:37]
+        errors = list(validator.iter_errors(dataset_too_short))
+        self.assertGreater(
+            len(errors), 0, "Schema must reject datasets with fewer than 38 items"
+        )
+
+    def test_schema_rejects_missing_required_properties(self):
+        """Verify schema rejects question objects missing required properties."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        item_validator = jsonschema.Draft7Validator(self.schema["items"])
+        for required_prop in ("question", "answer", "category", "subcategory"):
+            invalid_item = {
+                "question": "In what year was Sense and Sensibility published?",
+                "answer": "1811",
+                "category": "Publication Year",
+                "subcategory": "",
+            }
+            del invalid_item[required_prop]
+            errors = list(item_validator.iter_errors(invalid_item))
+            self.assertGreater(
+                len(errors),
+                0,
+                f"Schema must reject item missing required property '{required_prop}'",
+            )
+
+    def test_schema_rejects_unknown_categories(self):
+        """Verify schema rejects question objects with unknown categories."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        item_validator = jsonschema.Draft7Validator(self.schema["items"])
+        invalid_item = {
+            "question": "In what year was Sense and Sensibility published?",
+            "answer": "1811",
+            "category": "Unknown Category",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(invalid_item))
+        self.assertGreater(
+            len(errors), 0, "Schema must reject unknown category"
+        )
+
+    def test_schema_rejects_category_subcategory_mismatches(self):
+        """Verify schema rejects category-subcategory mismatches."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        item_validator = jsonschema.Draft7Validator(self.schema["items"])
+        pnp_mismatch = {
+            "question": "Who is the protagonist of Pride and Prejudice?",
+            "answer": "Elizabeth Bennet",
+            "category": "Pride and Prejudice",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(pnp_mismatch))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Pride and Prejudice with empty subcategory",
+        )
+
+        adaptations_mismatch = {
+            "question": "Who played Mr. Darcy in the 1995 BBC television adaptation?",
+            "answer": "Colin Firth",
+            "category": "Adaptations",
+            "subcategory": "Characters",
+        }
+        errors = list(item_validator.iter_errors(adaptations_mismatch))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Adaptations with Characters subcategory",
+        )
+
+        pub_year_mismatch = {
+            "question": "In what year was Sense and Sensibility published?",
+            "answer": "1811",
+            "category": "Publication Year",
+            "subcategory": "Characters",
+        }
+        errors = list(item_validator.iter_errors(pub_year_mismatch))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Publication Year with Characters subcategory",
+        )
+
+        austen_empty_subcat = {
+            "question": "In which Hampshire village did Jane Austen live from 1809 until 1817?",
+            "answer": "Chawton",
+            "category": "Jane Austen",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(austen_empty_subcat))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Jane Austen with empty subcategory",
+        )
+
+        austen_characters_subcat = {
+            "question": "In which Hampshire village did Jane Austen live from 1809 until 1817?",
+            "answer": "Chawton",
+            "category": "Jane Austen",
+            "subcategory": "Characters",
+        }
+        errors = list(item_validator.iter_errors(austen_characters_subcat))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Jane Austen with Characters subcategory",
+        )
+
+        persuasion_empty_subcat = {
+            "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
+            "answer": "Anne Elliot",
+            "category": "Persuasion",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(persuasion_empty_subcat))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Persuasion with empty subcategory",
+        )
+
+        persuasion_facts_subcat = {
+            "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
+            "answer": "Anne Elliot",
+            "category": "Persuasion",
+            "subcategory": "facts",
+        }
+        errors = list(item_validator.iter_errors(persuasion_facts_subcat))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Persuasion with facts subcategory",
+        )
+
+    def test_schema_conditional_rules_require_category(self):
+        """Verify conditional rules do not apply conflicting schemas when category is missing."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        item_validator = jsonschema.Draft7Validator(self.schema["items"])
+        item_missing_category = {
+            "question": "In what year was Sense and Sensibility published?",
+            "answer": "1811",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(item_missing_category))
+        error_messages = [e.message for e in errors]
+        self.assertTrue(
+            any("'category' is a required property" in msg for msg in error_messages),
+            f"Expected missing category error, got: {error_messages}",
+        )
+        self.assertFalse(
+            any("'Characters' was expected" in msg for msg in error_messages),
+            f"Conflicting conditional schema should not trigger when category is missing: {error_messages}",
+        )
+        self.assertFalse(
+            any("'facts' was expected" in msg for msg in error_messages),
+            f"Conflicting conditional schema should not trigger when category is missing: {error_messages}",
+        )
 
 
 def test_questions_data():

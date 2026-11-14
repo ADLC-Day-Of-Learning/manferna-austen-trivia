@@ -1,0 +1,239 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "questions.schema.json",
+  "title": "Jane Austen Trivia Questions Schema",
+  "description": "JSON Schema defining the structure, taxonomy, and question inventory for the Jane Austen trivia questions dataset. Specifies 5 categories ('Publication Year' with 6 questions, 'Adaptations' with 5 questions, 'Pride and Prejudice' with 7 questions, 'Jane Austen' with 10 questions, and 'Persuasion' with 10 questions), the subcategories (named subcategories 'Characters' with 17 questions under 'Pride and Prejudice' and 'Persuasion', and 'facts' with 10 questions under 'Jane Austen', and empty string for other categories), and the total count of 38 questions.",
+  "type": "array",
+  "minItems": 38,
+  "metadata": {
+    "totalQuestions": 38,
+    "categories": {
+      "count": 5,
+      "names": [
+        "Publication Year",
+        "Adaptations",
+        "Pride and Prejudice",
+        "Jane Austen",
+        "Persuasion"
+      ],
+      "breakdown": [
+        {
+          "name": "Publication Year",
+          "questionCount": 6,
+          "subcategories": {
+            "count": 0,
+            "names": []
+          }
+        },
+        {
+          "name": "Adaptations",
+          "questionCount": 5,
+          "subcategories": {
+            "count": 0,
+            "names": []
+          }
+        },
+        {
+          "name": "Pride and Prejudice",
+          "questionCount": 7,
+          "subcategories": {
+            "count": 1,
+            "names": [
+              "Characters"
+            ],
+            "breakdown": [
+              {
+                "name": "Characters",
+                "questionCount": 7
+              }
+            ]
+          }
+        },
+        {
+          "name": "Jane Austen",
+          "questionCount": 10,
+          "subcategories": {
+            "count": 1,
+            "names": [
+              "facts"
+            ],
+            "breakdown": [
+              {
+                "name": "facts",
+                "questionCount": 10
+              }
+            ]
+          }
+        },
+        {
+          "name": "Persuasion",
+          "questionCount": 10,
+          "subcategories": {
+            "count": 1,
+            "names": [
+              "Characters"
+            ],
+            "breakdown": [
+              {
+                "name": "Characters",
+                "questionCount": 10
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "subcategories": {
+      "count": 2,
+      "names": [
+        "Characters",
+        "facts"
+      ]
+    }
+  },
+  "definitions": {
+    "category": {
+      "type": "string",
+      "description": "Category name (5 total categories).",
+      "enum": [
+        "Publication Year",
+        "Adaptations",
+        "Pride and Prejudice",
+        "Jane Austen",
+        "Persuasion"
+      ]
+    },
+    "subcategory": {
+      "type": "string",
+      "description": "Subcategory name (named subcategories 'Characters' and 'facts', or empty string '' for none).",
+      "enum": [
+        "",
+        "Characters",
+        "facts"
+      ]
+    }
+  },
+  "items": {
+    "type": "object",
+    "required": [
+      "question",
+      "answer",
+      "category",
+      "subcategory"
+    ],
+    "properties": {
+      "question": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The trivia question text."
+      },
+      "answer": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The expected answer to the trivia question."
+      },
+      "category": {
+        "type": "string",
+        "description": "Question category. There are 5 categories: 'Publication Year' (6 questions), 'Adaptations' (5 questions), 'Pride and Prejudice' (7 questions), 'Jane Austen' (10 questions), and 'Persuasion' (10 questions).",
+        "enum": [
+          "Publication Year",
+          "Adaptations",
+          "Pride and Prejudice",
+          "Jane Austen",
+          "Persuasion"
+        ]
+      },
+      "subcategory": {
+        "type": "string",
+        "description": "Question subcategory. 'Characters' (17 questions across 'Pride and Prejudice' and 'Persuasion'), 'facts' (10 questions under 'Jane Austen'), or empty string '' (11 questions across 'Publication Year' and 'Adaptations').",
+        "enum": [
+          "",
+          "Characters",
+          "facts"
+        ]
+      }
+    },
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "required": [
+            "category"
+          ],
+          "properties": {
+            "category": {
+              "const": "Pride and Prejudice"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "subcategory": {
+              "const": "Characters"
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "category"
+          ],
+          "properties": {
+            "category": {
+              "enum": [
+                "Publication Year",
+                "Adaptations"
+              ]
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "subcategory": {
+              "const": ""
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "category"
+          ],
+          "properties": {
+            "category": {
+              "const": "Jane Austen"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "subcategory": {
+              "const": "facts"
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "category"
+          ],
+          "properties": {
+            "category": {
+              "const": "Persuasion"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "subcategory": {
+              "const": "Characters"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
