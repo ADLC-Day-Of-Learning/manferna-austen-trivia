@@ -134,12 +134,21 @@ def main(args=None):
         if parsed_args.survival
         else ScoreTracker()
     )
+    deck = list(questions)
+    random.shuffle(deck)
     first = True
     while True:
         if not first:
             print()
         first = False
-        question = random.choice(questions)
+
+        if not deck:
+            print("All questions answered! Reshuffling question pool...")
+            print()
+            deck = list(questions)
+            random.shuffle(deck)
+
+        question = deck.pop()
         result = play_question(question, tracker=tracker)
         if result is None:
             break
