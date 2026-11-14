@@ -59,6 +59,12 @@ class TestQuestionsData(unittest.TestCase):
                     "Characters",
                     f"Expected subcategory 'Characters' for {item.get('category')} at index {index}",
                 )
+            elif item.get("category") == "Jane Austen":
+                self.assertEqual(
+                    item.get("subcategory"),
+                    "facts",
+                    f"Expected subcategory 'facts' for Jane Austen at index {index}",
+                )
             else:
                 self.assertEqual(
                     item.get("subcategory"),
@@ -101,9 +107,12 @@ class TestQuestionsData(unittest.TestCase):
             self.assertEqual(item.get("category"), category)
 
     def test_pride_and_prejudice_characters_category(self):
-        category = "Characters from Pride and Prejudice"
+        category = "Pride and Prejudice"
+        subcategory = "Characters"
         character_questions = [
-            q for q in self.questions if q.get("category") == category
+            q
+            for q in self.questions
+            if q.get("category") == category and q.get("subcategory") == subcategory
         ]
         self.assertEqual(
             len(character_questions),
@@ -121,6 +130,7 @@ class TestQuestionsData(unittest.TestCase):
             self.assertIsInstance(item.get("answer"), str)
             self.assertTrue(len(item["answer"].strip()) > 0)
             self.assertEqual(item.get("category"), category)
+            self.assertEqual(item.get("subcategory"), subcategory)
 
         expected_characters = [
             "Elizabeth Bennet",
@@ -139,60 +149,29 @@ class TestQuestionsData(unittest.TestCase):
                 f"Expected character '{character}' to be an answer in category '{category}'",
             )
 
-    def test_persuasion_characters_category(self):
-        category = "Persuasion"
-        subcategory = "Characters"
-        character_questions = [
+    def test_jane_austen_adult_life_questions(self):
+        """Verify presence and schema of 10 questions on Jane Austen adult life."""
+        category = "Jane Austen"
+        subcategory = "facts"
+        austen_facts = [
             q
             for q in self.questions
-            if q.get("category") == category and q.get("subcategory") == subcategory
+            if q.get("category") == category
+            and q.get("subcategory") == subcategory
         ]
+
         self.assertGreaterEqual(
-            len(character_questions),
+            len(austen_facts),
             10,
-            f"Expected at least 10 questions in category '{category}' and subcategory '{subcategory}'",
+            f"Expected at least 10 questions, found {len(austen_facts)}",
         )
-        for item in character_questions:
+        for item in austen_facts:
             self.assertIsInstance(item.get("question"), str)
             self.assertTrue(len(item["question"].strip()) > 0)
             self.assertIsInstance(item.get("answer"), str)
             self.assertTrue(len(item["answer"].strip()) > 0)
             self.assertEqual(item.get("category"), category)
             self.assertEqual(item.get("subcategory"), subcategory)
-
-        standard_questions = [
-            q
-            for q in character_questions
-            if not q["question"].startswith("True or False:")
-        ]
-        tf_questions = [
-            q
-            for q in character_questions
-            if q["question"].startswith("True or False:")
-        ]
-        self.assertEqual(
-            len(standard_questions), 5, "Expected 5 standard questions"
-        )
-        self.assertEqual(
-            len(tf_questions), 5, "Expected 5 True/False questions"
-        )
-
-        expected_characters = [
-            "Anne Elliot",
-            "Captain Frederick Wentworth",
-            "Sir Walter Elliot",
-            "Lady Russell",
-            "Louisa Musgrove",
-        ]
-        all_answers = [q["answer"] for q in character_questions]
-        for character in expected_characters:
-            self.assertIn(
-                character,
-                all_answers,
-                f"Expected character '{character}' to be an answer in category '{category}'",
-            )
-        self.assertIn("True", all_answers)
-        self.assertIn("False", all_answers)
 
 
 def test_questions_data():
@@ -211,6 +190,8 @@ def test_questions_data():
         assert isinstance(q.get("subcategory"), str)
         if q.get("category") in ("Pride and Prejudice", "Persuasion"):
             assert q.get("subcategory") == "Characters"
+        elif q.get("category") == "Jane Austen":
+            assert q.get("subcategory") == "facts"
         else:
             assert q.get("subcategory") == ""
 

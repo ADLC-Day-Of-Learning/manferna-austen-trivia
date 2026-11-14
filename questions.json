@@ -62,7 +62,8 @@
   {
     "question": "What 2001 romantic comedy film starring Renée Zellweger and Colin Firth was loosely based on Pride and Prejudice?",
     "answer": "Bridget Jones's Diary",
-    "category": "Adaptations"
+    "category": "Adaptations",
+    "subcategory": ""
   },
   {
     "question": "Who is the protagonist of Pride and Prejudice and the second eldest Bennet daughter?",
@@ -107,63 +108,63 @@
     "subcategory": "Characters"
   },
   {
-    "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
-    "answer": "Anne Elliot",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "In which Hampshire village did Jane Austen live from 1809 until 1817, where she wrote and revised all her published novels?",
+    "answer": "Chawton",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "Who is the naval officer who returns to England after having been previously engaged to Anne Elliot?",
-    "answer": "Captain Frederick Wentworth",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "What three-word phrase appeared on the title page of the 1811 first edition of Sense and Sensibility instead of Jane Austen's name?",
+    "answer": "By a Lady",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "Who is Anne Elliot's vain and spendthrift baronet father who leases Kellynch Hall?",
-    "answer": "Sir Walter Elliot",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "Which London publisher published the first editions of Sense and Sensibility and Pride and Prejudice?",
+    "answer": "Thomas Egerton",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "Which close family friend and godmother persuaded Anne Elliot to break off her engagement to Frederick Wentworth?",
-    "answer": "Lady Russell",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "Which of Jane Austen's brothers served as her literary agent in London, negotiating with publishers on her behalf?",
+    "answer": "Henry Austen",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "Which sister of Charles Musgrove suffers a serious fall from the Cobb in Lyme Regis?",
-    "answer": "Louisa Musgrove",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "Which of Jane Austen's novels, published in 1814, sold out completely in about six months and was the most financially successful during her lifetime?",
+    "answer": "Mansfield Park",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "True or False: Admiral Croft and his wife Sophia lease Kellynch Hall from Sir Walter Elliot.",
-    "answer": "True",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "Which novel, published in late 1815, was the final novel to be published during Jane Austen's lifetime?",
+    "answer": "Emma",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "True or False: Anne Elliot is the eldest daughter of Sir Walter Elliot.",
-    "answer": "False",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "Which famous London publisher took over publishing Jane Austen's work in 1815, starting with Emma?",
+    "answer": "John Murray",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "True or False: Charles Musgrove was originally interested in marrying Anne Elliot before he married her sister Mary.",
-    "answer": "True",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "What was the title of the unfinished novel, originally titled The Brothers, that Jane Austen worked on in early 1817 before her death?",
+    "answer": "Sanditon",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "True or False: Captain James Benwick eventually marries Anne Elliot's sister Elizabeth.",
-    "answer": "False",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "In which English city did Jane Austen pass away in July 1817 after traveling there for medical treatment?",
+    "answer": "Winchester",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   },
   {
-    "question": "True or False: Mrs. Smith is an old school friend of Anne Elliot who reveals the deceitful character of Mr. William Elliot.",
-    "answer": "True",
-    "category": "Persuasion",
-    "subcategory": "Characters"
+    "question": "In which cathedral is Jane Austen buried?",
+    "answer": "Winchester Cathedral",
+    "category": "Jane Austen",
+    "subcategory": "facts"
   }
 ]
