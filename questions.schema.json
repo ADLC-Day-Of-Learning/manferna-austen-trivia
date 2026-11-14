@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "questions.schema.json",
   "title": "Jane Austen Trivia Questions Schema",
-  "description": "JSON Schema defining the structure, taxonomy, and question inventory for the Jane Austen trivia questions dataset. Specifies 5 categories ('Publication Year' with 6 questions, 'Adaptations' with 5 questions, 'Pride and Prejudice' with 7 questions, 'Jane Austen' with 10 questions, and 'Persuasion' with 10 questions), the subcategories (named subcategories 'Characters' with 17 questions under 'Pride and Prejudice' and 'Persuasion', and 'facts' with 10 questions under 'Jane Austen', and empty string for other categories), and the total count of 38 questions.",
+  "description": "JSON Schema defining the structure, taxonomy, and question inventory for the Jane Austen trivia questions dataset. Specifies 5 categories ('Publication Year' with 6 questions, 'Adaptations' with 5 questions, 'Pride and Prejudice' with 7 questions, 'Jane Austen' with 10 questions, and 'Persuasion' with 10 questions), the subcategories (named subcategories 'Characters' with 17 questions under 'Pride and Prejudice' and 'Persuasion', and 'Facts' with 10 questions under 'Jane Austen', and empty string for other categories), and the total count of 38 questions.",
   "type": "array",
   "minItems": 38,
   "metadata": {
@@ -55,11 +55,11 @@
           "subcategories": {
             "count": 1,
             "names": [
-              "facts"
+              "Facts"
             ],
             "breakdown": [
               {
-                "name": "facts",
+                "name": "Facts",
                 "questionCount": 10
               }
             ]
@@ -87,7 +87,7 @@
       "count": 2,
       "names": [
         "Characters",
-        "facts"
+        "Facts"
       ]
     }
   },
@@ -123,11 +123,11 @@
       },
       "subcategory": {
         "type": "string",
-        "description": "Question subcategory. 'Characters' (17 questions across 'Pride and Prejudice' and 'Persuasion'), 'facts' (10 questions under 'Jane Austen'), or empty string '' (11 questions across 'Publication Year' and 'Adaptations').",
+        "description": "Question subcategory. 'Characters' (17 questions across 'Pride and Prejudice' and 'Persuasion'), 'Facts' (10 questions under 'Jane Austen'), or empty string '' (11 questions across 'Publication Year' and 'Adaptations').",
         "enum": [
           "",
           "Characters",
-          "facts"
+          "Facts"
         ]
       }
     },
@@ -188,7 +188,7 @@
         "then": {
           "properties": {
             "subcategory": {
-              "const": "facts"
+              "const": "Facts"
             }
           }
         }
