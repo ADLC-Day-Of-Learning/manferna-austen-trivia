@@ -157,7 +157,8 @@ class TestAustenFunctions(unittest.TestCase):
     def test_main_survival_mode_continues_until_incorrect(self, mock_play, mock_load):
         mock_load.return_value = [{"question": "Q?", "answer": "A"}]
         mock_play.side_effect = [True, True, False]
-        exit_code = austen.main(["--survival"])
+        with patch("sys.stdout", new_callable=io.StringIO):
+            exit_code = austen.main(["--survival"])
         self.assertEqual(exit_code, 0)
         self.assertEqual(mock_play.call_count, 3)
 
@@ -186,7 +187,8 @@ class TestAustenFunctions(unittest.TestCase):
     ):
         mock_load.return_value = [{"question": "Q?", "answer": "A"}]
         mock_play.side_effect = [False, None]
-        exit_code = austen.main(["--question"])
+        with patch("sys.stdout", new_callable=io.StringIO):
+            exit_code = austen.main(["--question"])
         self.assertEqual(exit_code, 0)
         self.assertEqual(mock_play.call_count, 2)
 
@@ -509,7 +511,8 @@ class TestSurvivalModeSampling(unittest.TestCase):
             return True
 
         with patch("austen.play_question", side_effect=mock_play):
-            exit_code = austen.main(["--survival"])
+            with patch("sys.stdout", new_callable=io.StringIO):
+                exit_code = austen.main(["--survival"])
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(len(presented_questions), 20)
@@ -580,7 +583,8 @@ class TestSurvivalModeSampling(unittest.TestCase):
             return True
 
         with patch("austen.play_question", side_effect=mock_play):
-            exit_code = austen.main(["--question"])
+            with patch("sys.stdout", new_callable=io.StringIO):
+                exit_code = austen.main(["--question"])
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(len(presented_questions), 15)
