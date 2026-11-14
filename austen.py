@@ -35,7 +35,7 @@ def check_answer(user_answer: str, expected_answer: str) -> bool:
 class ScoreTracker:
     """Tracks correct and incorrect question counts, resetting after max_questions."""
 
-    def __init__(self, max_questions: int = 10):
+    def __init__(self, max_questions: int | None = 10):
         self.max_questions = max_questions
         self.correct = 0
         self.incorrect = 0
@@ -56,6 +56,9 @@ class ScoreTracker:
             self.correct += 1
         else:
             self.incorrect += 1
+
+        if self.max_questions is None:
+            return False
 
         return self.total >= self.max_questions
 
@@ -97,6 +100,12 @@ def build_parser():
         action="store_true",
         help="Retrieve and play trivia questions with score tracking",
     )
+    parser.add_argument(
+        "-s",
+        "--survival",
+        action="store_true",
+        help="Play trivia in survival mode (ends when an answer is incorrect)",
+    )
     return parser
 
 
@@ -109,7 +118,7 @@ def main(args=None):
     """Entrypoint for the CLI game."""
     parsed_args = parse_args(args)
 
-    if not parsed_args.question:
+    if not parsed_args.question and not parsed_args.survival:
         build_parser().print_help()
         return 0
 
@@ -119,7 +128,11 @@ def main(args=None):
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    tracker = ScoreTracker()
+    tracker = (
+        ScoreTracker(max_questions=None)
+        if parsed_args.survival
+        else ScoreTracker()
+    )
     first = True
     while True:
         if not first:
@@ -128,6 +141,8 @@ def main(args=None):
         question = random.choice(questions)
         result = play_question(question, tracker=tracker)
         if result is None:
+            break
+        if parsed_args.survival and not result:
             break
 
     return 0

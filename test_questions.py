@@ -59,11 +59,11 @@ class TestQuestionsData(unittest.TestCase):
                 str,
                 f"Field 'subcategory' in item {index} must be a string",
             )
-            if item.get("category") == "Pride and Prejudice":
+            if item.get("category") in ("Pride and Prejudice", "Persuasion"):
                 self.assertEqual(
                     item.get("subcategory"),
                     "Characters",
-                    f"Expected subcategory 'Characters' for Pride and Prejudice at index {index}",
+                    f"Expected subcategory 'Characters' for {item.get('category')} at index {index}",
                 )
             elif item.get("category") == "Jane Austen":
                 self.assertEqual(
@@ -178,6 +178,61 @@ class TestQuestionsData(unittest.TestCase):
             self.assertEqual(item.get("category"), category)
             self.assertEqual(item.get("subcategory"), subcategory)
 
+    def test_persuasion_characters_category(self):
+        category = "Persuasion"
+        subcategory = "Characters"
+        character_questions = [
+            q
+            for q in self.questions
+            if q.get("category") == category and q.get("subcategory") == subcategory
+        ]
+        self.assertGreaterEqual(
+            len(character_questions),
+            10,
+            f"Expected at least 10 questions in category '{category}' and subcategory '{subcategory}'",
+        )
+        for item in character_questions:
+            self.assertIsInstance(item.get("question"), str)
+            self.assertTrue(len(item["question"].strip()) > 0)
+            self.assertIsInstance(item.get("answer"), str)
+            self.assertTrue(len(item["answer"].strip()) > 0)
+            self.assertEqual(item.get("category"), category)
+            self.assertEqual(item.get("subcategory"), subcategory)
+
+        standard_questions = [
+            q
+            for q in character_questions
+            if not q["question"].startswith("True or False:")
+        ]
+        tf_questions = [
+            q
+            for q in character_questions
+            if q["question"].startswith("True or False:")
+        ]
+        self.assertEqual(
+            len(standard_questions), 5, "Expected 5 standard questions"
+        )
+        self.assertEqual(
+            len(tf_questions), 5, "Expected 5 True/False questions"
+        )
+
+        expected_characters = [
+            "Anne Elliot",
+            "Captain Frederick Wentworth",
+            "Sir Walter Elliot",
+            "Lady Russell",
+            "Louisa Musgrove",
+        ]
+        all_answers = [q["answer"] for q in character_questions]
+        for character in expected_characters:
+            self.assertIn(
+                character,
+                all_answers,
+                f"Expected character '{character}' to be an answer in category '{category}'",
+            )
+        self.assertIn("True", all_answers)
+        self.assertIn("False", all_answers)
+
 
 class TestQuestionsSchemaFile(unittest.TestCase):
     """Test suite for questions JSON schema specification."""
@@ -215,7 +270,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
         jsonschema.Draft7Validator.check_schema(self.schema)
         self.assertEqual(self.schema.get("type"), "array")
         self.assertIn("$schema", self.schema)
-        self.assertGreaterEqual(self.schema.get("minItems", 0), 28)
+        self.assertGreaterEqual(self.schema.get("minItems", 0), 38)
 
     def test_schema_specifies_categories(self):
         """Verify schema specifies category count and category names."""
@@ -227,15 +282,16 @@ class TestQuestionsSchemaFile(unittest.TestCase):
             "Adaptations",
             "Pride and Prejudice",
             "Jane Austen",
+            "Persuasion",
         ]
         self.assertIn("enum", category_prop)
-        self.assertEqual(len(category_prop["enum"]), 4)
+        self.assertEqual(len(category_prop["enum"]), 5)
         self.assertEqual(set(category_prop["enum"]), set(expected_categories))
 
         metadata_cats = (
             self.schema.get("metadata", {}).get("categories", {})
         )
-        self.assertEqual(metadata_cats.get("count"), 4)
+        self.assertEqual(metadata_cats.get("count"), 5)
         self.assertEqual(
             set(metadata_cats.get("names", [])), set(expected_categories)
         )
@@ -262,7 +318,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
     def test_schema_specifies_question_counts(self):
         """Verify schema specifies total and per-category question counts."""
         metadata = self.schema.get("metadata", {})
-        self.assertEqual(metadata.get("totalQuestions"), 28)
+        self.assertEqual(metadata.get("totalQuestions"), 38)
 
         breakdown = {
             item["name"]: item["questionCount"]
@@ -272,9 +328,10 @@ class TestQuestionsSchemaFile(unittest.TestCase):
         self.assertEqual(breakdown.get("Adaptations"), 5)
         self.assertEqual(breakdown.get("Pride and Prejudice"), 7)
         self.assertEqual(breakdown.get("Jane Austen"), 10)
+        self.assertEqual(breakdown.get("Persuasion"), 10)
 
     def _create_valid_dataset(self):
-        """Generate a valid 28-question dataset matching the taxonomy specification."""
+        """Generate a valid 38-question dataset matching the taxonomy specification."""
         dataset = []
         for i in range(6):
             dataset.append(
@@ -312,6 +369,15 @@ class TestQuestionsSchemaFile(unittest.TestCase):
                     "subcategory": "facts",
                 }
             )
+        for i in range(10):
+            dataset.append(
+                {
+                    "question": f"Persuasion question {i + 1}?",
+                    "answer": f"Persuasion answer {i + 1}",
+                    "category": "Persuasion",
+                    "subcategory": "Characters",
+                }
+            )
         return dataset
 
     def test_schema_validates_sample_questions(self):
@@ -344,6 +410,12 @@ class TestQuestionsSchemaFile(unittest.TestCase):
                 "category": "Jane Austen",
                 "subcategory": "facts",
             },
+            {
+                "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
+                "answer": "Anne Elliot",
+                "category": "Persuasion",
+                "subcategory": "Characters",
+            },
         ]
         validator = jsonschema.Draft7Validator(self.schema["items"])
         for sample in sample_data:
@@ -351,7 +423,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
             self.assertEqual(len(errors), 0, f"Validation errors: {errors}")
 
     def test_schema_validates_full_dataset(self):
-        """Verify schema directly validates a full 28-question dataset without overriding minItems."""
+        """Verify schema directly validates a full 38-question dataset without overriding minItems."""
         if jsonschema is None:
             self.skipTest("jsonschema package not available")
 
@@ -379,15 +451,15 @@ class TestQuestionsSchemaFile(unittest.TestCase):
         )
 
     def test_schema_rejects_fewer_than_min_items(self):
-        """Verify schema rejects datasets with fewer than minItems (28) questions."""
+        """Verify schema rejects datasets with fewer than minItems (38) questions."""
         if jsonschema is None:
             self.skipTest("jsonschema package not available")
 
         validator = jsonschema.Draft7Validator(self.schema)
-        dataset_too_short = self._create_valid_dataset()[:27]
+        dataset_too_short = self._create_valid_dataset()[:37]
         errors = list(validator.iter_errors(dataset_too_short))
         self.assertGreater(
-            len(errors), 0, "Schema must reject datasets with fewer than 28 items"
+            len(errors), 0, "Schema must reject datasets with fewer than 38 items"
         )
 
     def test_schema_rejects_missing_required_properties(self):
@@ -499,6 +571,32 @@ class TestQuestionsSchemaFile(unittest.TestCase):
             "Schema must reject Jane Austen with Characters subcategory",
         )
 
+        persuasion_empty_subcat = {
+            "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
+            "answer": "Anne Elliot",
+            "category": "Persuasion",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(persuasion_empty_subcat))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Persuasion with empty subcategory",
+        )
+
+        persuasion_facts_subcat = {
+            "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
+            "answer": "Anne Elliot",
+            "category": "Persuasion",
+            "subcategory": "facts",
+        }
+        errors = list(item_validator.iter_errors(persuasion_facts_subcat))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Persuasion with facts subcategory",
+        )
+
     def test_schema_conditional_rules_require_category(self):
         """Verify conditional rules do not apply conflicting schemas when category is missing."""
         if jsonschema is None:
@@ -540,7 +638,7 @@ def test_questions_data():
         assert str(q.get("answer", "")).strip() != ""
         assert isinstance(q.get("category"), str) and len(q["category"]) > 0
         assert isinstance(q.get("subcategory"), str)
-        if q.get("category") == "Pride and Prejudice":
+        if q.get("category") in ("Pride and Prejudice", "Persuasion"):
             assert q.get("subcategory") == "Characters"
         elif q.get("category") == "Jane Austen":
             assert q.get("subcategory") == "facts"

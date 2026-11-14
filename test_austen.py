@@ -113,6 +113,17 @@ class TestAustenFunctions(unittest.TestCase):
         args = austen.parse_args([])
         self.assertFalse(args.question)
 
+    def test_parse_args_with_survival_flag(self):
+        args = austen.parse_args(["--survival"])
+        self.assertTrue(args.survival)
+
+        args_short = austen.parse_args(["-s"])
+        self.assertTrue(args_short.survival)
+
+    def test_parse_args_without_survival_flag(self):
+        args = austen.parse_args([])
+        self.assertFalse(args.survival)
+
     def test_main_without_args_prints_help(self):
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             exit_code = austen.main([])
@@ -120,6 +131,54 @@ class TestAustenFunctions(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn("Jane Austen Trivia CLI", output)
         self.assertIn("--question", output)
+        self.assertIn("--survival", output)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_survival_mode_terminates_on_incorrect(self, mock_play, mock_load):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.return_value = False
+        exit_code = austen.main(["--survival"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 1)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_survival_mode_continues_until_incorrect(self, mock_play, mock_load):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.side_effect = [True, True, False]
+        exit_code = austen.main(["--survival"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 3)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question", wraps=austen.play_question)
+    @patch("builtins.input")
+    def test_main_survival_mode_does_not_reset_score_after_10_correct_answers(
+        self, mock_input, mock_play, mock_load
+    ):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_input.side_effect = ["A"] * 10 + ["wrong"]
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            exit_code = austen.main(["--survival"])
+            output = mock_stdout.getvalue()
+        self.assertEqual(exit_code, 0)
+        tracker = mock_play.call_args.kwargs["tracker"]
+        self.assertEqual(tracker.correct, 10)
+        self.assertEqual(tracker.incorrect, 1)
+        self.assertIsNone(tracker.max_questions)
+        self.assertNotIn("Counters reset to 0", output)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_non_survival_mode_does_not_terminate_on_incorrect(
+        self, mock_play, mock_load
+    ):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.side_effect = [False, None]
+        exit_code = austen.main(["--question"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 2)
 
     @patch("austen.load_questions", side_effect=FileNotFoundError("missing file"))
     def test_main_error_loading_questions(self, mock_load):
@@ -199,6 +258,22 @@ class TestScoreTracking(unittest.TestCase):
         self.assertEqual(tracker.correct, 0)
         self.assertEqual(tracker.incorrect, 0)
 
+    def test_score_tracker_max_questions_none_disables_reset(self):
+        tracker = austen.ScoreTracker(max_questions=None)
+        for _ in range(10):
+            reset = tracker.record_answer(is_correct=True)
+            self.assertFalse(reset)
+        self.assertEqual(tracker.correct, 10)
+        self.assertEqual(tracker.incorrect, 0)
+        self.assertEqual(tracker.total, 10)
+
+        # Question 11 incorrect preserves score streak without resetting
+        reset = tracker.record_answer(is_correct=False)
+        self.assertFalse(reset)
+        self.assertEqual(tracker.correct, 10)
+        self.assertEqual(tracker.incorrect, 1)
+        self.assertEqual(tracker.total, 11)
+
     def test_play_question_with_tracker_records_answers(self):
         tracker = austen.ScoreTracker()
         question_item = {
@@ -262,6 +337,25 @@ class TestScoreTracking(unittest.TestCase):
         self.assertIn("Score: 2 correct, 1 incorrect", output)
         self.assertIn("Counters reset to 0 after 3 questions.", output)
 
+    def test_play_question_with_tracker_max_questions_none(self):
+        tracker = austen.ScoreTracker(max_questions=None)
+        for _ in range(10):
+            tracker.record_answer(True)
+        question_item = {
+            "question": "In what year was Pride and Prejudice published?",
+            "answer": "1813",
+            "category": "Publication Year",
+        }
+        with patch("builtins.input", return_value="1813"):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                res = austen.play_question(question_item, tracker=tracker)
+                output = mock_stdout.getvalue()
+        self.assertTrue(res)
+        self.assertEqual(tracker.correct, 11)
+        self.assertEqual(tracker.incorrect, 0)
+        self.assertIn("Score: 11 correct, 0 incorrect", output)
+        self.assertNotIn("Counters reset to 0", output)
+
 
 class TestAustenCLI(unittest.TestCase):
     """End-to-end and subprocess CLI tests."""
@@ -320,6 +414,41 @@ class TestAustenCLI(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         self.assertIn("--question", result.stdout)
+        self.assertIn("--survival", result.stdout)
+
+    def test_cli_survival_mode_terminates_on_incorrect_answer(self):
+        """Verify that in survival mode, the game terminates upon an incorrect answer."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        result = subprocess.run(
+            [sys.executable, str(script_path), "--survival"],
+            input="incorrect_answer\n",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Incorrect", result.stdout)
+        self.assertEqual(result.stdout.lower().count("your answer:"), 1)
+
+    def test_cli_survival_mode_short_flag(self):
+        """Verify -s flag enables survival mode and terminates on incorrect answer."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        result = subprocess.run(
+            [sys.executable, str(script_path), "-s"],
+            input="incorrect_answer\n",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Incorrect", result.stdout)
+        self.assertEqual(result.stdout.lower().count("your answer:"), 1)
 
     def test_cli_multi_question_session_with_scoring(self):
         """Verify CLI tracks scores across consecutive questions and exits cleanly on EOF."""
