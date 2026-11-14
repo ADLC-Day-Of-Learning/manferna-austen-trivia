@@ -59,6 +59,12 @@ class TestQuestionsData(unittest.TestCase):
                     "Characters",
                     f"Expected subcategory 'Characters' for Pride and Prejudice at index {index}",
                 )
+            elif item.get("category") == "Jane Austen":
+                self.assertEqual(
+                    item.get("subcategory"),
+                    "facts",
+                    f"Expected subcategory 'facts' for Jane Austen at index {index}",
+                )
             else:
                 self.assertEqual(
                     item.get("subcategory"),
@@ -101,9 +107,12 @@ class TestQuestionsData(unittest.TestCase):
             self.assertEqual(item.get("category"), category)
 
     def test_pride_and_prejudice_characters_category(self):
-        category = "Characters from Pride and Prejudice"
+        category = "Pride and Prejudice"
+        subcategory = "Characters"
         character_questions = [
-            q for q in self.questions if q.get("category") == category
+            q
+            for q in self.questions
+            if q.get("category") == category and q.get("subcategory") == subcategory
         ]
         self.assertEqual(
             len(character_questions),
@@ -121,6 +130,7 @@ class TestQuestionsData(unittest.TestCase):
             self.assertIsInstance(item.get("answer"), str)
             self.assertTrue(len(item["answer"].strip()) > 0)
             self.assertEqual(item.get("category"), category)
+            self.assertEqual(item.get("subcategory"), subcategory)
 
         expected_characters = [
             "Elizabeth Bennet",
@@ -139,6 +149,30 @@ class TestQuestionsData(unittest.TestCase):
                 f"Expected character '{character}' to be an answer in category '{category}'",
             )
 
+    def test_jane_austen_adult_life_questions(self):
+        """Verify presence and schema of 10 questions on Jane Austen adult life."""
+        category = "Jane Austen"
+        subcategory = "facts"
+        austen_facts = [
+            q
+            for q in self.questions
+            if q.get("category") == category
+            and q.get("subcategory") == subcategory
+        ]
+
+        self.assertGreaterEqual(
+            len(austen_facts),
+            10,
+            f"Expected at least 10 questions, found {len(austen_facts)}",
+        )
+        for item in austen_facts:
+            self.assertIsInstance(item.get("question"), str)
+            self.assertTrue(len(item["question"].strip()) > 0)
+            self.assertIsInstance(item.get("answer"), str)
+            self.assertTrue(len(item["answer"].strip()) > 0)
+            self.assertEqual(item.get("category"), category)
+            self.assertEqual(item.get("subcategory"), subcategory)
+
 
 def test_questions_data():
     """Triage proposed test case compatibility function."""
@@ -156,6 +190,8 @@ def test_questions_data():
         assert isinstance(q.get("subcategory"), str)
         if q.get("category") == "Pride and Prejudice":
             assert q.get("subcategory") == "Characters"
+        elif q.get("category") == "Jane Austen":
+            assert q.get("subcategory") == "facts"
         else:
             assert q.get("subcategory") == ""
 
