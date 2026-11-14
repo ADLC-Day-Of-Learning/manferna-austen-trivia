@@ -94,13 +94,14 @@ def play_question(
 def build_parser():
     """Build the argument parser for CLI commands."""
     parser = argparse.ArgumentParser(description="Jane Austen Trivia CLI")
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-q",
         "--question",
         action="store_true",
         help="Retrieve and play trivia questions with score tracking",
     )
-    parser.add_argument(
+    group.add_argument(
         "-s",
         "--survival",
         action="store_true",
@@ -133,12 +134,29 @@ def main(args=None):
         if parsed_args.survival
         else ScoreTracker()
     )
+    deck = list(questions)
+    random.shuffle(deck)
     first = True
+    last_question = None
     while True:
         if not first:
             print()
         first = False
-        question = random.choice(questions)
+
+        if not deck:
+            print("All questions answered! Reshuffling question pool...")
+            print()
+            deck = list(questions)
+            random.shuffle(deck)
+            if (
+                len(deck) > 1
+                and last_question is not None
+                and deck[-1]["question"] == last_question["question"]
+            ):
+                deck[-1], deck[0] = deck[0], deck[-1]
+
+        question = deck.pop()
+        last_question = question
         result = play_question(question, tracker=tracker)
         if result is None:
             break

@@ -124,6 +124,16 @@ class TestAustenFunctions(unittest.TestCase):
         args = austen.parse_args([])
         self.assertFalse(args.survival)
 
+    def test_parse_args_conflicting_question_and_survival_flags_rejected(self):
+        with patch("sys.stderr", new_callable=io.StringIO):
+            with self.assertRaises(SystemExit) as cm:
+                austen.parse_args(["-q", "-s"])
+            self.assertEqual(cm.exception.code, 2)
+
+            with self.assertRaises(SystemExit) as cm:
+                austen.parse_args(["--question", "--survival"])
+            self.assertEqual(cm.exception.code, 2)
+
     def test_main_without_args_prints_help(self):
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             exit_code = austen.main([])
@@ -147,7 +157,8 @@ class TestAustenFunctions(unittest.TestCase):
     def test_main_survival_mode_continues_until_incorrect(self, mock_play, mock_load):
         mock_load.return_value = [{"question": "Q?", "answer": "A"}]
         mock_play.side_effect = [True, True, False]
-        exit_code = austen.main(["--survival"])
+        with patch("sys.stdout", new_callable=io.StringIO):
+            exit_code = austen.main(["--survival"])
         self.assertEqual(exit_code, 0)
         self.assertEqual(mock_play.call_count, 3)
 
@@ -176,7 +187,8 @@ class TestAustenFunctions(unittest.TestCase):
     ):
         mock_load.return_value = [{"question": "Q?", "answer": "A"}]
         mock_play.side_effect = [False, None]
-        exit_code = austen.main(["--question"])
+        with patch("sys.stdout", new_callable=io.StringIO):
+            exit_code = austen.main(["--question"])
         self.assertEqual(exit_code, 0)
         self.assertEqual(mock_play.call_count, 2)
 
@@ -467,6 +479,167 @@ class TestAustenCLI(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("Score:", result.stdout)
         self.assertIn("Exiting", result.stdout)
+
+    def test_cli_conflicting_question_and_survival_flags_rejected(self):
+        """Verify passing both --question and --survival flags exits with code 2."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        for flags in [("-q", "-s"), ("--question", "--survival")]:
+            result = subprocess.run(
+                [sys.executable, str(script_path), *flags],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                cwd=str(repo_root),
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("not allowed with argument", result.stderr.lower())
+
+
+class TestSurvivalModeSampling(unittest.TestCase):
+    """Unit tests for sampling without replacement and pool exhaustion in survival mode."""
+
+    def test_survival_mode_samples_without_replacement(self):
+        """Ensure no duplicate questions are presented during a 20-question survival streak."""
+        presented_questions = []
+
+        def mock_play(question_item, tracker=None):
+            presented_questions.append(question_item["question"])
+            if len(presented_questions) >= 20:
+                return None
+            return True
+
+        with patch("austen.play_question", side_effect=mock_play):
+            with patch("sys.stdout", new_callable=io.StringIO):
+                exit_code = austen.main(["--survival"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(presented_questions), 20)
+        self.assertEqual(len(set(presented_questions)), 20)
+
+    def test_survival_mode_pool_exhaustion(self):
+        """Ensure graceful handling and reshuffling when all questions in questions.json are answered."""
+        all_questions = austen.load_questions()
+        total_questions = len(all_questions)
+        presented_questions = []
+
+        def mock_play(question_item, tracker=None):
+            presented_questions.append(question_item["question"])
+            if len(presented_questions) >= total_questions + 1:
+                return None
+            return True
+
+        with patch("austen.play_question", side_effect=mock_play):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                exit_code = austen.main(["--survival"])
+                output = mock_stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(presented_questions), total_questions + 1)
+        self.assertEqual(
+            len(set(presented_questions[:total_questions])), total_questions
+        )
+        self.assertIn(
+            "All questions answered! Reshuffling question pool...", output
+        )
+
+    def test_survival_mode_small_pool_exhaustion_reshuffles(self):
+        """Ensure small question pool exhausts and reshuffles cleanly."""
+        small_pool = [
+            {"question": "Q1?", "answer": "A1"},
+            {"question": "Q2?", "answer": "A2"},
+        ]
+        presented_questions = []
+
+        def mock_play(question_item, tracker=None):
+            presented_questions.append(question_item["question"])
+            if len(presented_questions) >= 4:
+                return None
+            return True
+
+        with patch("austen.load_questions", return_value=small_pool):
+            with patch("austen.play_question", side_effect=mock_play):
+                with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                    exit_code = austen.main(["--survival"])
+                    output = mock_stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(presented_questions), 4)
+        self.assertEqual(set(presented_questions[:2]), {"Q1?", "Q2?"})
+        self.assertEqual(set(presented_questions[2:]), {"Q1?", "Q2?"})
+        self.assertIn(
+            "All questions answered! Reshuffling question pool...", output
+        )
+
+    def test_survival_mode_no_duplicate_across_reshuffle_boundaries(self):
+        """Verify that questions across deck reshuffle boundaries are never identical."""
+        small_pool = [
+            {"question": "Q1?", "answer": "A1"},
+            {"question": "Q2?", "answer": "A2"},
+        ]
+
+        for _ in range(10):
+            presented = []
+
+            def mock_play(question_item, tracker=None):
+                presented.append(question_item["question"])
+                if len(presented) >= 6:  # 3 full cycles
+                    return None
+                return True
+
+            with patch("austen.load_questions", return_value=small_pool):
+                with patch("austen.play_question", side_effect=mock_play):
+                    with patch("sys.stdout", new_callable=io.StringIO):
+                        exit_code = austen.main(["--survival"])
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(len(presented), 6)
+            for i in range(1, len(presented)):
+                self.assertNotEqual(
+                    presented[i],
+                    presented[i - 1],
+                    f"Turn {i+1} repeated question from turn {i}: {presented[i]}",
+                )
+
+    def test_survival_mode_single_question_pool_reshuffle(self):
+        """Ensure single-question pool reshuffles cleanly without index error."""
+        single_pool = [
+            {"question": "Only question?", "answer": "Only answer"},
+        ]
+        presented = []
+
+        def mock_play(question_item, tracker=None):
+            presented.append(question_item["question"])
+            if len(presented) >= 3:
+                return None
+            return True
+
+        with patch("austen.load_questions", return_value=single_pool):
+            with patch("austen.play_question", side_effect=mock_play):
+                with patch("sys.stdout", new_callable=io.StringIO):
+                    exit_code = austen.main(["--survival"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(presented), 3)
+
+    def test_question_mode_samples_without_replacement(self):
+        """Ensure standard question mode also samples without replacement."""
+        presented_questions = []
+
+        def mock_play(question_item, tracker=None):
+            presented_questions.append(question_item["question"])
+            if len(presented_questions) >= 15:
+                return None
+            return True
+
+        with patch("austen.play_question", side_effect=mock_play):
+            with patch("sys.stdout", new_callable=io.StringIO):
+                exit_code = austen.main(["--question"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(presented_questions), 15)
+        self.assertEqual(len(set(presented_questions)), 15)
 
 
 if __name__ == "__main__":
