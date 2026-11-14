@@ -68,8 +68,8 @@ class TestQuestionsData(unittest.TestCase):
             elif item.get("category") == "Jane Austen":
                 self.assertEqual(
                     item.get("subcategory"),
-                    "facts",
-                    f"Expected subcategory 'facts' for Jane Austen at index {index}",
+                    "Facts",
+                    f"Expected subcategory 'Facts' for Jane Austen at index {index}",
                 )
             else:
                 self.assertEqual(
@@ -158,7 +158,7 @@ class TestQuestionsData(unittest.TestCase):
     def test_jane_austen_adult_life_questions(self):
         """Verify presence and schema of 10 questions on Jane Austen adult life."""
         category = "Jane Austen"
-        subcategory = "facts"
+        subcategory = "Facts"
         austen_facts = [
             q
             for q in self.questions
@@ -177,6 +177,20 @@ class TestQuestionsData(unittest.TestCase):
             self.assertTrue(len(item["answer"].strip()) > 0)
             self.assertEqual(item.get("category"), category)
             self.assertEqual(item.get("subcategory"), subcategory)
+
+    def test_jane_austen_subcategory_standardized_to_title_case(self):
+        """Verify that all Jane Austen questions use Title Case 'Facts' and no lowercase 'facts' remains."""
+        subcategories = {q.get("subcategory") for q in self.questions if "subcategory" in q}
+        self.assertNotIn("facts", subcategories, "Lowercase 'facts' subcategory must not be present")
+        self.assertIn("Facts", subcategories, "Title Case 'Facts' subcategory must be present")
+
+        for index, item in enumerate(self.questions):
+            if item.get("category") == "Jane Austen":
+                self.assertEqual(
+                    item.get("subcategory"),
+                    "Facts",
+                    f"Question at index {index} has subcategory '{item.get('subcategory')}', expected 'Facts'",
+                )
 
     def test_persuasion_characters_category(self):
         category = "Persuasion"
@@ -305,7 +319,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
         )
         self.assertIn("enum", subcat_prop)
         self.assertIn("Characters", subcat_prop["enum"])
-        self.assertIn("facts", subcat_prop["enum"])
+        self.assertIn("Facts", subcat_prop["enum"])
         self.assertIn("", subcat_prop["enum"])
 
         metadata_subcats = (
@@ -313,7 +327,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
         )
         self.assertEqual(metadata_subcats.get("count"), 2)
         self.assertIn("Characters", metadata_subcats.get("names", []))
-        self.assertIn("facts", metadata_subcats.get("names", []))
+        self.assertIn("Facts", metadata_subcats.get("names", []))
 
     def test_schema_specifies_question_counts(self):
         """Verify schema specifies total and per-category question counts."""
@@ -366,7 +380,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
                     "question": f"Jane Austen question {i + 1}?",
                     "answer": f"Austen answer {i + 1}",
                     "category": "Jane Austen",
-                    "subcategory": "facts",
+                    "subcategory": "Facts",
                 }
             )
         for i in range(10):
@@ -408,7 +422,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
                 "question": "In which Hampshire village did Jane Austen live from 1809 until 1817?",
                 "answer": "Chawton",
                 "category": "Jane Austen",
-                "subcategory": "facts",
+                "subcategory": "Facts",
             },
             {
                 "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
@@ -588,13 +602,13 @@ class TestQuestionsSchemaFile(unittest.TestCase):
             "question": "Who is the protagonist of Persuasion and the second daughter of Sir Walter Elliot?",
             "answer": "Anne Elliot",
             "category": "Persuasion",
-            "subcategory": "facts",
+            "subcategory": "Facts",
         }
         errors = list(item_validator.iter_errors(persuasion_facts_subcat))
         self.assertGreater(
             len(errors),
             0,
-            "Schema must reject Persuasion with facts subcategory",
+            "Schema must reject Persuasion with Facts subcategory",
         )
 
     def test_schema_conditional_rules_require_category(self):
@@ -619,7 +633,7 @@ class TestQuestionsSchemaFile(unittest.TestCase):
             f"Conflicting conditional schema should not trigger when category is missing: {error_messages}",
         )
         self.assertFalse(
-            any("'facts' was expected" in msg for msg in error_messages),
+            any("'Facts' was expected" in msg for msg in error_messages),
             f"Conflicting conditional schema should not trigger when category is missing: {error_messages}",
         )
 
@@ -641,7 +655,7 @@ def test_questions_data():
         if q.get("category") in ("Pride and Prejudice", "Persuasion"):
             assert q.get("subcategory") == "Characters"
         elif q.get("category") == "Jane Austen":
-            assert q.get("subcategory") == "facts"
+            assert q.get("subcategory") == "Facts"
         else:
             assert q.get("subcategory") == ""
 
