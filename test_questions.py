@@ -177,8 +177,9 @@ class TestQuestionsSchemaFile(unittest.TestCase):
 
     def test_schema_is_valid_json_schema(self):
         """Verify that the schema conforms to the JSON Schema Draft 7 meta-schema."""
-        if jsonschema is not None:
-            jsonschema.Draft7Validator.check_schema(self.schema)
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+        jsonschema.Draft7Validator.check_schema(self.schema)
         self.assertEqual(self.schema.get("type"), "array")
         self.assertIn("$schema", self.schema)
         self.assertGreaterEqual(self.schema.get("minItems", 0), 18)
@@ -235,8 +236,40 @@ class TestQuestionsSchemaFile(unittest.TestCase):
         self.assertEqual(breakdown.get("Adaptations"), 5)
         self.assertEqual(breakdown.get("Pride and Prejudice"), 7)
 
+    def _create_valid_dataset(self):
+        """Generate a valid 18-question dataset matching the taxonomy specification."""
+        dataset = []
+        for i in range(6):
+            dataset.append(
+                {
+                    "question": f"Publication question {i + 1}?",
+                    "answer": f"Answer {i + 1}",
+                    "category": "Publication Year",
+                    "subcategory": "",
+                }
+            )
+        for i in range(5):
+            dataset.append(
+                {
+                    "question": f"Adaptation question {i + 1}?",
+                    "answer": f"Answer {i + 1}",
+                    "category": "Adaptations",
+                    "subcategory": "",
+                }
+            )
+        for i in range(7):
+            dataset.append(
+                {
+                    "question": f"Character question {i + 1}?",
+                    "answer": f"Character {i + 1}",
+                    "category": "Pride and Prejudice",
+                    "subcategory": "Characters",
+                }
+            )
+        return dataset
+
     def test_schema_validates_sample_questions(self):
-        """Verify schema successfully validates question objects conforming to specification."""
+        """Verify schema items definition validates individual question objects."""
         if jsonschema is None:
             self.skipTest("jsonschema package not available")
 
@@ -260,11 +293,117 @@ class TestQuestionsSchemaFile(unittest.TestCase):
                 "subcategory": "Characters",
             },
         ]
-        validator = jsonschema.Draft7Validator(
-            {**self.schema, "minItems": 1}
+        validator = jsonschema.Draft7Validator(self.schema["items"])
+        for sample in sample_data:
+            errors = list(validator.iter_errors(sample))
+            self.assertEqual(len(errors), 0, f"Validation errors: {errors}")
+
+    def test_schema_validates_full_dataset(self):
+        """Verify schema directly validates a full 18-question dataset without overriding minItems."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        full_dataset = self._create_valid_dataset()
+        validator = jsonschema.Draft7Validator(self.schema)
+        errors = list(validator.iter_errors(full_dataset))
+        self.assertEqual(
+            len(errors), 0, f"Validation errors on full dataset: {errors}"
         )
-        errors = list(validator.iter_errors(sample_data))
-        self.assertEqual(len(errors), 0, f"Validation errors: {errors}")
+
+    def test_schema_rejects_fewer_than_min_items(self):
+        """Verify schema rejects datasets with fewer than minItems (18) questions."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        validator = jsonschema.Draft7Validator(self.schema)
+        dataset_too_short = self._create_valid_dataset()[:17]
+        errors = list(validator.iter_errors(dataset_too_short))
+        self.assertGreater(
+            len(errors), 0, "Schema must reject datasets with fewer than 18 items"
+        )
+
+    def test_schema_rejects_missing_required_properties(self):
+        """Verify schema rejects question objects missing required properties."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        item_validator = jsonschema.Draft7Validator(self.schema["items"])
+        for required_prop in ("question", "answer", "category", "subcategory"):
+            invalid_item = {
+                "question": "In what year was Sense and Sensibility published?",
+                "answer": "1811",
+                "category": "Publication Year",
+                "subcategory": "",
+            }
+            del invalid_item[required_prop]
+            errors = list(item_validator.iter_errors(invalid_item))
+            self.assertGreater(
+                len(errors),
+                0,
+                f"Schema must reject item missing required property '{required_prop}'",
+            )
+
+    def test_schema_rejects_unknown_categories(self):
+        """Verify schema rejects question objects with unknown categories."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        item_validator = jsonschema.Draft7Validator(self.schema["items"])
+        invalid_item = {
+            "question": "In what year was Sense and Sensibility published?",
+            "answer": "1811",
+            "category": "Unknown Category",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(invalid_item))
+        self.assertGreater(
+            len(errors), 0, "Schema must reject unknown category"
+        )
+
+    def test_schema_rejects_category_subcategory_mismatches(self):
+        """Verify schema rejects category-subcategory mismatches."""
+        if jsonschema is None:
+            self.skipTest("jsonschema package not available")
+
+        item_validator = jsonschema.Draft7Validator(self.schema["items"])
+        pnp_mismatch = {
+            "question": "Who is the protagonist of Pride and Prejudice?",
+            "answer": "Elizabeth Bennet",
+            "category": "Pride and Prejudice",
+            "subcategory": "",
+        }
+        errors = list(item_validator.iter_errors(pnp_mismatch))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Pride and Prejudice with empty subcategory",
+        )
+
+        adaptations_mismatch = {
+            "question": "Who played Mr. Darcy in the 1995 BBC television adaptation?",
+            "answer": "Colin Firth",
+            "category": "Adaptations",
+            "subcategory": "Characters",
+        }
+        errors = list(item_validator.iter_errors(adaptations_mismatch))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Adaptations with Characters subcategory",
+        )
+
+        pub_year_mismatch = {
+            "question": "In what year was Sense and Sensibility published?",
+            "answer": "1811",
+            "category": "Publication Year",
+            "subcategory": "Characters",
+        }
+        errors = list(item_validator.iter_errors(pub_year_mismatch))
+        self.assertGreater(
+            len(errors),
+            0,
+            "Schema must reject Publication Year with Characters subcategory",
+        )
 
 
 def test_questions_data():
