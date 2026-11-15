@@ -35,8 +35,9 @@ def check_answer(user_answer: str, expected_answer: str) -> bool:
 class ScoreTracker:
     """Tracks correct and incorrect question counts, resetting after max_questions."""
 
-    def __init__(self, max_questions: int | None = 10):
+    def __init__(self, max_questions: int | None = 10, name: str | None = None):
         self.max_questions = max_questions
+        self.name = name
         self.correct = 0
         self.incorrect = 0
 
@@ -64,9 +65,16 @@ class ScoreTracker:
 
 
 def play_question(
-    question_item: dict, tracker: ScoreTracker | None = None
+    question_item: dict,
+    tracker: ScoreTracker | None = None,
+    player: str | None = None,
 ) -> bool | None:
     """Ask a question, read the player's answer, and output correct or incorrect."""
+    if player is None and tracker is not None:
+        player = getattr(tracker, "name", None)
+
+    if player:
+        print(f"{player}:")
     print(question_item["question"])
     try:
         user_answer = input("Your answer: ")
@@ -83,7 +91,8 @@ def play_question(
 
     if tracker is not None:
         reset = tracker.record_answer(is_correct)
-        print(f"Score: {tracker.correct} correct, {tracker.incorrect} incorrect")
+        prefix = f"{player} " if player else ""
+        print(f"{prefix}Score: {tracker.correct} correct, {tracker.incorrect} incorrect")
         if reset:
             print(f"Counters reset to 0 after {tracker.max_questions} questions.")
             tracker.reset()
@@ -107,6 +116,12 @@ def build_parser():
         action="store_true",
         help="Play trivia in survival mode (ends when an answer is incorrect)",
     )
+    group.add_argument(
+        "-d",
+        "--duel",
+        action="store_true",
+        help="Play trivia in duel mode (2 players, 10 questions each)",
+    )
     return parser
 
 
@@ -119,7 +134,7 @@ def main(args=None):
     """Entrypoint for the CLI game."""
     parsed_args = parse_args(args)
 
-    if not parsed_args.question and not parsed_args.survival:
+    if not parsed_args.question and not parsed_args.survival and not parsed_args.duel:
         build_parser().print_help()
         return 0
 
@@ -128,6 +143,44 @@ def main(args=None):
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
+
+    if parsed_args.duel:
+        p1_tracker = ScoreTracker(max_questions=None, name="Player 1")
+        p2_tracker = ScoreTracker(max_questions=None, name="Player 2")
+        players = [p1_tracker, p2_tracker]
+        deck = list(questions)
+        random.shuffle(deck)
+        first = True
+        last_question = None
+        for i in range(20):
+            if not first:
+                print()
+            first = False
+
+            if not deck:
+                print("All questions answered! Reshuffling question pool...")
+                print()
+                deck = list(questions)
+                random.shuffle(deck)
+                if (
+                    len(deck) > 1
+                    and last_question is not None
+                    and deck[-1]["question"] == last_question["question"]
+                ):
+                    deck[-1], deck[0] = deck[0], deck[-1]
+
+            question = deck.pop()
+            last_question = question
+            current_tracker = players[i % 2]
+            result = play_question(question, tracker=current_tracker)
+            if result is None:
+                return 0
+
+        print()
+        print("Game over! Final scores:")
+        print(f"Player 1: {p1_tracker.correct} correct, {p1_tracker.incorrect} incorrect")
+        print(f"Player 2: {p2_tracker.correct} correct, {p2_tracker.incorrect} incorrect")
+        return 0
 
     tracker = (
         ScoreTracker(max_questions=None)

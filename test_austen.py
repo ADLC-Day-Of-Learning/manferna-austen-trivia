@@ -88,6 +88,21 @@ class TestAustenFunctions(unittest.TestCase):
         self.assertIn("Incorrect", output)
         self.assertIn("1813", output)
 
+    @patch("builtins.input", return_value="1813")
+    def test_play_question_with_player_name(self, mock_input):
+        question_item = {
+            "question": "In what year was Pride and Prejudice published?",
+            "answer": "1813",
+            "category": "Publication Year",
+            "subcategory": "",
+        }
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            result = austen.play_question(question_item, player="Player 1")
+            output = mock_stdout.getvalue()
+        self.assertTrue(result)
+        self.assertIn("Player 1:", output)
+        self.assertIn("In what year was Pride and Prejudice published?", output)
+
     @patch("builtins.input", side_effect=EOFError)
     def test_play_question_eof(self, mock_input):
         question_item = {
@@ -124,6 +139,17 @@ class TestAustenFunctions(unittest.TestCase):
         args = austen.parse_args([])
         self.assertFalse(args.survival)
 
+    def test_parse_args_with_duel_flag(self):
+        args = austen.parse_args(["--duel"])
+        self.assertTrue(args.duel)
+
+        args_short = austen.parse_args(["-d"])
+        self.assertTrue(args_short.duel)
+
+    def test_parse_args_without_duel_flag(self):
+        args = austen.parse_args([])
+        self.assertFalse(args.duel)
+
     def test_parse_args_conflicting_question_and_survival_flags_rejected(self):
         with patch("sys.stderr", new_callable=io.StringIO):
             with self.assertRaises(SystemExit) as cm:
@@ -134,6 +160,18 @@ class TestAustenFunctions(unittest.TestCase):
                 austen.parse_args(["--question", "--survival"])
             self.assertEqual(cm.exception.code, 2)
 
+    def test_parse_args_conflicting_duel_flags_rejected(self):
+        with patch("sys.stderr", new_callable=io.StringIO):
+            for flag_pair in [
+                ["-q", "-d"],
+                ["-s", "-d"],
+                ["--question", "--duel"],
+                ["--survival", "--duel"],
+            ]:
+                with self.assertRaises(SystemExit) as cm:
+                    austen.parse_args(flag_pair)
+                self.assertEqual(cm.exception.code, 2)
+
     def test_main_without_args_prints_help(self):
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             exit_code = austen.main([])
@@ -142,6 +180,7 @@ class TestAustenFunctions(unittest.TestCase):
         self.assertIn("Jane Austen Trivia CLI", output)
         self.assertIn("--question", output)
         self.assertIn("--survival", output)
+        self.assertIn("--duel", output)
 
     @patch("austen.load_questions")
     @patch("austen.play_question")
@@ -192,6 +231,73 @@ class TestAustenFunctions(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(mock_play.call_count, 2)
 
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_duel_mode_completes_after_20_questions(
+        self, mock_play, mock_load
+    ):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        def fake_play(question_item, tracker=None):
+            if tracker is not None:
+                tracker.record_answer(True)
+            return True
+        mock_play.side_effect = fake_play
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            exit_code = austen.main(["--duel"])
+            output = mock_stdout.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 20)
+        self.assertIn("Game over! Final scores:", output)
+        self.assertIn("Player 1: 10 correct, 0 incorrect", output)
+        self.assertIn("Player 2: 10 correct, 0 incorrect", output)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_duel_mode_alternates_player_trackers(
+        self, mock_play, mock_load
+    ):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.return_value = True
+        with patch("sys.stdout", new_callable=io.StringIO):
+            exit_code = austen.main(["--duel"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 20)
+        for i, call in enumerate(mock_play.call_args_list):
+            tracker = call.kwargs["tracker"]
+            expected_name = "Player 1" if i % 2 == 0 else "Player 2"
+            self.assertEqual(tracker.name, expected_name)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_duel_mode_terminates_on_eof(self, mock_play, mock_load):
+        mock_load.return_value = [{"question": "Q?", "answer": "A"}]
+        mock_play.side_effect = [True, True, None]
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            exit_code = austen.main(["--duel"])
+            output = mock_stdout.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 3)
+        self.assertNotIn("Game over!", output)
+
+    @patch("austen.load_questions")
+    @patch("austen.play_question")
+    def test_main_duel_mode_reshuffles_when_pool_exhausted(
+        self, mock_play, mock_load
+    ):
+        mock_load.return_value = [
+            {"question": "Q1?", "answer": "A1"},
+            {"question": "Q2?", "answer": "A2"},
+        ]
+        mock_play.return_value = True
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            exit_code = austen.main(["--duel"])
+            output = mock_stdout.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mock_play.call_count, 20)
+        self.assertIn(
+            "All questions answered! Reshuffling question pool...", output
+        )
+
     @patch("austen.load_questions", side_effect=FileNotFoundError("missing file"))
     def test_main_error_loading_questions(self, mock_load):
         with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
@@ -203,6 +309,11 @@ class TestAustenFunctions(unittest.TestCase):
 
 class TestScoreTracking(unittest.TestCase):
     """Unit tests for ScoreTracker and score tracking integration."""
+
+    def test_score_tracker_name_attribute(self):
+        tracker = austen.ScoreTracker(name="Player 1")
+        self.assertEqual(tracker.name, "Player 1")
+        self.assertIsNone(austen.ScoreTracker().name)
 
     def test_score_tracker_initial_state(self):
         tracker = austen.ScoreTracker()
@@ -368,6 +479,22 @@ class TestScoreTracking(unittest.TestCase):
         self.assertIn("Score: 11 correct, 0 incorrect", output)
         self.assertNotIn("Counters reset to 0", output)
 
+    def test_play_question_with_tracker_name(self):
+        tracker = austen.ScoreTracker(name="Player 1")
+        question_item = {
+            "question": "In what year was Pride and Prejudice published?",
+            "answer": "1813",
+            "category": "Publication Year",
+        }
+        with patch("builtins.input", return_value="1813"):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                res = austen.play_question(question_item, tracker=tracker)
+                output = mock_stdout.getvalue()
+        self.assertTrue(res)
+        self.assertEqual(tracker.correct, 1)
+        self.assertIn("Player 1:", output)
+        self.assertIn("Player 1 Score: 1 correct, 0 incorrect", output)
+
 
 class TestAustenCLI(unittest.TestCase):
     """End-to-end and subprocess CLI tests."""
@@ -427,6 +554,7 @@ class TestAustenCLI(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("--question", result.stdout)
         self.assertIn("--survival", result.stdout)
+        self.assertIn("--duel", result.stdout)
 
     def test_cli_survival_mode_terminates_on_incorrect_answer(self):
         """Verify that in survival mode, the game terminates upon an incorrect answer."""
@@ -495,6 +623,87 @@ class TestAustenCLI(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 2)
             self.assertIn("not allowed with argument", result.stderr.lower())
+
+    def test_cli_duel_mode_completes_after_20_questions(self):
+        """Verify that duel mode prompts for 20 questions total and terminates."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        # Provide 20 answers to complete the duel session
+        inputs = "\n".join(["dummy_answer"] * 20) + "\n"
+        result = subprocess.run(
+            [sys.executable, str(script_path), "--duel"],
+            input=inputs,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.lower().count("your answer:"), 20)
+        self.assertIn("Game over! Final scores:", result.stdout)
+        self.assertIn("Player 1: 0 correct, 10 incorrect", result.stdout)
+        self.assertIn("Player 2: 0 correct, 10 incorrect", result.stdout)
+
+    def test_cli_duel_mode_short_flag(self):
+        """Verify -d flag enables duel mode and completes after 20 questions."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        inputs = "\n".join(["dummy_answer"] * 20) + "\n"
+        result = subprocess.run(
+            [sys.executable, str(script_path), "-d"],
+            input=inputs,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.lower().count("your answer:"), 20)
+        self.assertIn("Game over! Final scores:", result.stdout)
+
+    def test_cli_conflicting_duel_flags_rejected(self):
+        """Verify passing conflicting flags with --duel exits with code 2."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        for flags in [
+            ("-q", "-d"),
+            ("-s", "-d"),
+            ("--question", "--duel"),
+            ("--survival", "--duel"),
+        ]:
+            result = subprocess.run(
+                [sys.executable, str(script_path), *flags],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                cwd=str(repo_root),
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("not allowed with argument", result.stderr.lower())
+
+    def test_cli_duel_mode_alternating_turns_and_scores(self):
+        """Verify duel mode displays active player and tracks independent scores."""
+        repo_root = Path(__file__).resolve().parent
+        script_path = repo_root / "austen.py"
+
+        # Provide 2 answers followed by EOF
+        result = subprocess.run(
+            [sys.executable, str(script_path), "--duel"],
+            input="wrong1\nwrong2\n",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Player 1:", result.stdout)
+        self.assertIn("Player 2:", result.stdout)
+        self.assertIn("Player 1 Score: 0 correct, 1 incorrect", result.stdout)
+        self.assertIn("Player 2 Score: 0 correct, 1 incorrect", result.stdout)
+        self.assertIn("Exiting", result.stdout)
 
 
 class TestSurvivalModeSampling(unittest.TestCase):
